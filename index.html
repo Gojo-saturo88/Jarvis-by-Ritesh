@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jarvis</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0B1118">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<style>
+:root{--bg:#0B1118;--surface:#131D28;--ink:#E8EEF4;--muted:#8A9BAD;--line:#243445;--accent:#4FC3F7;--accent-ink:#062033;--code:#0A1017;--err:#FF8A80;
+--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#EEF3F8;--surface:#fff;--ink:#0F2233;--muted:#5A6E80;--line:#CFDAE5;--accent:#0B79B5;--accent-ink:#fff;--code:#EAF0F6;--err:#B3261E}}
+:root[data-theme="light"]{--bg:#EEF3F8;--surface:#fff;--ink:#0F2233;--muted:#5A6E80;--line:#CFDAE5;--accent:#0B79B5;--accent-ink:#fff;--code:#EAF0F6;--err:#B3261E}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button{font:inherit;color:inherit;cursor:pointer}
+.app{display:flex;flex-direction:column;height:100%;max-width:860px;margin:0 auto;padding:0 16px}
+header{padding:16px 0 10px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-size:24px;font-weight:800;letter-spacing:-.03em;margin:0;display:flex;align-items:center;gap:10px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.hbtns{display:flex;gap:6px}
+.ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:14px;color:var(--muted)}
+.ghost:hover{color:var(--ink)}
+.modes{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px}
+.modes button{flex:none;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;font-size:14px}
+.modes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+#log{flex:1;overflow-y:auto;padding:8px 0 16px}
+.msg{margin:0 0 16px}
+.msg.user{margin-left:auto;width:fit-content;max-width:85%;background:var(--accent);color:var(--accent-ink);padding:10px 14px;border-radius:14px;white-space:pre-wrap}
+.msg.ai{background:var(--surface);border:1px solid var(--line);padding:14px 16px;border-radius:14px;overflow-wrap:anywhere}
+.msg.ai p{margin:0 0 .8em;white-space:pre-wrap}
+.msg.ai p:last-child{margin:0}
+.msg.ai code{font:14px var(--mono);background:var(--code);padding:1px 5px;border-radius:4px}
+.cb{margin:0 0 .8em;border-radius:10px;background:var(--code);overflow:hidden}
+.cbh{display:flex;justify-content:space-between;align-items:center;padding:4px 8px 4px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.cbh button{background:none;border:0;font-size:13px;color:var(--accent);padding:4px 8px}
+.cb pre{margin:0;padding:12px 14px;overflow-x:auto}
+.cb pre code{background:none;padding:0}
+.site{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:10px}
+.site b{flex:1 1 100%}
+.site button{padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:transparent;font-size:14px}
+.site button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.msg.err{color:var(--err);font-size:14px}
+.empty{color:var(--muted);text-align:center;margin-top:9vh}
+.empty h2{color:var(--ink);font-size:20px;margin:0 0 6px}
+.ex{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.ex button{font-size:14px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface)}
+form{display:flex;gap:8px;padding:8px 0 16px}
+textarea{flex:1;resize:none;font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);max-height:160px}
+#send{font-weight:700;padding:0 20px;border-radius:12px;border:0;background:var(--accent);color:var(--accent-ink)}
+#send:disabled{opacity:.5;cursor:default}
+.iconb{padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--ink)}
+#thumbs{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted);padding-bottom:4px}
+#thumbs:empty{display:none}
+.wm{flex:none;text-align:center;font-size:12px;color:var(--muted);opacity:.8;padding:0 0 12px;margin-top:-8px;user-select:none}
+#thumbs img{height:44px;border-radius:6px}
+#thumbs button{background:none;border:0;color:var(--accent);font-size:14px}
+.panel{position:fixed;inset:0;background:var(--bg);z-index:10;display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.panel.open{display:flex}
+.ph{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.ph h2{margin:0;font-size:18px}
+#list{overflow-y:auto;padding:12px 16px;max-width:860px;width:100%;margin:0 auto}
+.item{display:flex;gap:8px;margin-bottom:8px}
+.item button.t{flex:1;text-align:left;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item button.x{padding:0 14px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted)}
+#pf{flex:1;width:100%;border:0;background:#fff}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1 class="brand"><span class="dot"></span>Jarvis</h1>
+  <div class="hbtns"><button class="ghost" id="theme" type="button">Theme</button><button class="ghost" id="hist" type="button">History</button><button class="ghost" id="new" type="button">New chat</button></div>
+</header>
+<div class="modes" id="modes" role="group" aria-label="Mode"></div>
+<div id="log" aria-live="polite"></div>
+<div id="thumbs"></div>
+<form id="f">
+  <textarea id="q" rows="1" aria-label="Your message"></textarea>
+  <input type="file" id="file" accept="image/*" hidden>
+  <button class="iconb" id="attach" type="button" aria-label="Attach an image" hidden>Image</button>
+  <button class="iconb" id="mic" type="button" aria-label="Speak your message" hidden>Mic</button>
+  <button id="send" type="submit">Send</button>
+</form>
+<div class="wm">Made by Ritesh</div>
+</div>
+
+<div class="panel" id="hp" role="dialog" aria-label="Chat history">
+  <div class="ph"><h2>History</h2><button class="ghost" id="hclose" type="button">Close</button></div>
+  <div id="list"></div>
+</div>
+<div class="panel" id="pp" role="dialog" aria-label="Website preview">
+  <div class="ph"><h2>Preview</h2><div class="hbtns"><button class="ghost" id="pdl" type="button">Download</button><button class="ghost" id="pclose" type="button">Close</button></div></div>
+  <iframe id="pf" title="Website preview" sandbox="allow-scripts"></iframe>
+</div>
+
+<script>
+const MODES={
+ chat:{name:"Chat",ph:"Ask anything…",ex:["Explain how vaccines work","Plan a 3-day study schedule","Give me a short pep talk"],
+  sys:"You are Jarvis, a helpful and friendly AI assistant. Answer clearly and accurately. Be concise unless asked for detail."},
+ maths:{name:"Maths",ph:"Type a maths problem…",ex:["Solve 3x² − 12x + 9 = 0","Differentiate x·sin(x)","What is 15% of 240?"],
+  sys:"You are Jarvis, a patient maths tutor. Solve problems step by step, show every line of working, and state the final answer clearly. Use plain text notation (x^2, sqrt(x))."},
+ code:{name:"Code",ph:"Describe the code you need…",ex:["Python function to reverse a linked list","Explain async/await in JavaScript","Fix: for i in range(10) print(i)"],
+  sys:"You are Jarvis, an expert programmer. Give working code in fenced code blocks with a language tag, then a short explanation. Prefer simple, readable solutions."},
+ write:{name:"Writing",ph:"What should I write or improve?",ex:["Write a polite email asking for a deadline extension","Make this sound more professional: hey, need the report asap","Write a short story about a lighthouse"],
+  sys:"You are Jarvis, a skilled writing assistant. Help draft, edit and improve emails, essays, stories and messages. Match the requested tone and length. When editing, give the improved text first, then a brief note on what you changed."},
+ study:{name:"Study",ph:"What are you studying?",ex:["Teach me photosynthesis","Quiz me on the causes of World War 1","Make flashcards for basic French greetings"],
+  sys:"You are Jarvis, a friendly study helper. Explain ideas simply with examples, then check understanding with one short question or mini quiz. Offer summaries and flashcards when asked."},
+ trans:{name:"Translate",ph:"Text to translate, and the language…",ex:["Translate to Spanish: Where is the train station?","Translate to French: Thank you for your help","Translate to English: Gracias por todo"],
+  sys:"You are Jarvis, a translator. Translate the user's text into the language they ask for. If no language is given and the text is English, translate to Spanish; otherwise translate to English. Give the translation first, then a short pronunciation or usage note if helpful."},
+ site:{name:"Website",ph:"Describe the website you want…",ex:["A landing page for a coffee shop","A personal portfolio for a photographer","A to-do list app that works in the browser"],
+  sys:"You are Jarvis, a web designer and developer. When asked for a website, reply with one short sentence, then ONE complete self-contained HTML file inside a single ```html code block. Put all CSS in <style> and all JavaScript in <script>. Make it responsive, accessible and attractive with a distinctive, deliberate design. No external images, fonts, scripts or network requests (use CSS shapes, emoji or inline SVG instead). Keep it under about 250 lines. When asked to change the site, return the full updated file in one ```html block."}
+};
+const $=id=>document.getElementById(id);
+const log=$("log"),q=$("q"),send=$("send"),f=$("f");
+let mode="chat",chat=newChat(),sample=null,downloads=null,busy=false,ctrl=null,curHtml="",pending=null,canImg=false,partial="";
+
+function newChat(){return{id:Date.now().toString(36),title:"",mode:"chat",msgs:[]}}
+function store(){try{return JSON.parse(localStorage.getItem("jarvis:chats")||"[]")}catch(e){return[]}}
+function save(){
+  if(!chat.msgs.length)return;
+  try{
+    let all=store().filter(c=>c.id!==chat.id);all.unshift(chat);all=all.slice(0,20);
+    while(all.length>1&&JSON.stringify(all).length>1.5e6)all.pop();
+    localStorage.setItem("jarvis:chats",JSON.stringify(all));
+  }catch(e){}
+}
+
+function buildModes(){
+  const m=$("modes");m.innerHTML="";
+  Object.keys(MODES).forEach(k=>{
+    const b=document.createElement("button");b.type="button";b.textContent=MODES[k].name;
+    b.setAttribute("aria-pressed",k===mode);
+    b.onclick=()=>{mode=k;chat.mode=k;buildModes();q.placeholder=MODES[k].ph;if(!chat.msgs.length)showEmpty()};
+    m.append(b);
+  });
+  q.placeholder=MODES[mode].ph;
+}
+function showEmpty(){
+  log.innerHTML="";
+  const d=document.createElement("div");d.className="empty";
+  const h=document.createElement("h2");h.textContent="Hi, I'm Jarvis.";
+  d.append(h,mode==="site"?"Describe a website and I'll build it.":"Ask me a question.");
+  const ex=document.createElement("div");ex.className="ex";
+  MODES[mode].ex.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>{q.value=t;f.requestSubmit()};ex.append(b)});
+  d.append(ex);log.append(d);
+}
+
+async function copy(text,btn){
+  let ok=false;
+  try{await navigator.clipboard.writeText(text);ok=true}catch(e){
+    try{const t=document.createElement("textarea");t.value=text;document.body.append(t);t.select();ok=document.execCommand("copy");t.remove()}catch(e2){}
+  }
+  const old=btn.textContent;btn.textContent=ok?"Copied":"Select and copy manually";setTimeout(()=>btn.textContent=old,1600);
+}
+function codeBlock(lang,body){
+  const w=document.createElement("div");w.className="cb";
+  const h=document.createElement("div");h.className="cbh";
+  const l=document.createElement("span");l.textContent=lang||"code";
+  const b=document.createElement("button");b.type="button";b.textContent="Copy code";b.onclick=()=>copy(body,b);
+  h.append(l,b);
+  const pre=document.createElement("pre"),c=document.createElement("code");c.textContent=body;pre.append(c);
+  w.append(h,pre);return w;
+}
+function splitSite(text){
+  const m=/```html[ \t]*\n([\s\S]*?)(```|$)/.exec(text);
+  if(!m)return{html:null,rest:text};
+  return{html:m[1],done:m[2]==="```",rest:text.slice(0,m.index)+text.slice(m.index+m[0].length)};
+}
+function render(el,text,isSite,final){
+  el.textContent="";
+  let site=null;
+  if(isSite){const s=splitSite(text);site=s;text=s.rest}
+  text.split("```").forEach((seg,i)=>{
+    if(i%2===1){
+      const nl=seg.indexOf("\n");
+      el.append(codeBlock(nl>-1?seg.slice(0,nl).trim():"",nl>-1?seg.slice(nl+1).replace(/\n$/,""):seg));
+    }else{
+      seg.split(/\n{2,}/).forEach(par=>{
+        if(!par.trim())return;
+        const p=document.createElement("p");
+        par.split(/(`[^`\n]+`)/).forEach(s=>{
+          if(s.length>2&&s[0]==="`"&&s.endsWith("`")){const c=document.createElement("code");c.textContent=s.slice(1,-1);p.append(c)}else p.append(s)});
+        el.append(p);
+      });
+    }
+  });
+  if(site&&site.html){
+    const box=document.createElement("div");box.className="site";
+    const t=document.createElement("b");
+    if(!site.done&&!final){t.textContent="Building your website…";box.append(t)}
+    else{
+      t.textContent=site.done?"Your website is ready":"Your website is ready (the reply was cut off, so the end may be missing)";box.append(t);
+      const pv=document.createElement("button");pv.type="button";pv.className="p";pv.textContent="Preview";pv.onclick=()=>openPreview(site.html);
+      const dl=document.createElement("button");dl.type="button";dl.textContent="Download";dl.onclick=()=>download(site.html,dl);
+      const cp=document.createElement("button");cp.type="button";cp.textContent="Copy code";cp.onclick=()=>copy(site.html,cp);
+      box.append(pv,dl,cp);
+    }
+    el.append(box);
+  }
+}
+function openPreview(html){curHtml=html;$("pf").srcdoc=html;$("pp").classList.add("open")}
+function download(html){
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download="website.html";
+  document.body.append(a);a.click();a.remove();
+}
+$("pdl").onclick=e=>download(curHtml,e.target);
+$("pclose").onclick=()=>{$("pp").classList.remove("open");$("pf").srcdoc=""};
+
+function add(cls,text,isSite){
+  if(log.querySelector(".empty"))log.innerHTML="";
+  const d=document.createElement("div");d.className="msg "+cls;
+  if(cls==="ai")render(d,text,isSite,true);else d.textContent=text;
+  log.append(d);log.scrollTop=log.scrollHeight;return d;
+}
+function loadChat(c){
+  chat=c;mode=c.mode||"chat";buildModes();log.innerHTML="";
+  c.msgs.forEach(m=>add(m.role==="user"?"user":"ai",m.content,mode==="site"));
+  if(!c.msgs.length)showEmpty();
+}
+function openHistory(){
+  const l=$("list");l.innerHTML="";
+  const all=store();
+  if(!all.length){const p=document.createElement("p");p.style.color="var(--muted)";p.textContent="No saved chats yet. Chats are saved on this device as you go.";l.append(p)}
+  all.forEach(c=>{
+    const r=document.createElement("div");r.className="item";
+    const t=document.createElement("button");t.type="button";t.className="t";t.textContent=(MODES[c.mode]?MODES[c.mode].name+": ":"")+(c.title||"Untitled");
+    t.onclick=()=>{if(ctrl)ctrl.abort();busy=false;send.disabled=!sample;loadChat(c);$("hp").classList.remove("open")};
+    const x=document.createElement("button");x.type="button";x.className="x";x.textContent="Delete";x.setAttribute("aria-label","Delete chat");
+    x.onclick=()=>{try{localStorage.setItem("jarvis:chats",JSON.stringify(store().filter(z=>z.id!==c.id)))}catch(e){}if(c.id===chat.id){chat=newChat();chat.mode=mode;showEmpty()}openHistory()};
+    r.append(t,x);l.append(r);
+  });
+  $("hp").classList.add("open");
+}
+$("hist").onclick=openHistory;
+$("hclose").onclick=()=>$("hp").classList.remove("open");
+$("new").onclick=()=>{if(ctrl)ctrl.abort();busy=false;send.disabled=!sample;chat=newChat();chat.mode=mode;showEmpty()};
+
+async function init(){
+  sample=async(msgs,o)=>{
+    const code=()=>{try{return localStorage.getItem("jarvis:code")||""}catch(e){return""}};
+    const go=()=>fetch("/api/chat",{method:"POST",signal:o.signal,headers:{"Content-Type":"application/json","x-access-code":code()},body:JSON.stringify({messages:msgs,tier:o.modelTier})});
+    let r=await go();
+    if(r.status===401){const c=prompt("Enter the access code");if(c){try{localStorage.setItem("jarvis:code",c)}catch(e){}r=await go()}}
+    let d={};try{d=await r.json()}catch(e){}
+    if(!r.ok){const er=new Error(d.error||"Request failed ("+r.status+")");er.code=r.status===429?"rate_limited":"error";throw er}
+    return{text:d.text||"",truncated:!!d.truncated};
+  };
+}
+f.addEventListener("submit",async e=>{
+  e.preventDefault();
+  let text=q.value.trim();
+  if(busy){if(ctrl)ctrl.abort();return}
+  if((!text&&!pending)||!sample)return;
+  if(!text)text="Describe this image.";
+  busy=true;send.textContent="Stop";q.value="";q.style.height="auto";const img=pending;pending=null;$("thumbs").innerHTML="";partial="";
+  const isSite=mode==="site";
+  const cur=chat;chat.mode=mode;if(!chat.title)chat.title=text.slice(0,60);
+  add("user",img?text+"\n[image attached]":text);
+  chat.msgs.push({role:"user",content:img?text+" [image attached]":text});
+  const out=add("ai","Thinking…",false);
+  ctrl=new AbortController();const mine=ctrl;
+  try{
+    const r=await sample([{role:"user",content:MODES[mode].sys+"\n\nThe conversation follows. Reply to the last message."},{role:"assistant",content:"Understood."},...chat.msgs.map(m=>({role:m.role,content:m.content}))],{
+      cache:false,signal:mine.signal,modelTier:isSite?"complex":"default",...(img?{images:[img]}:{}),
+      onText:({text})=>{partial=text;render(out,text,isSite,false);log.scrollTop=log.scrollHeight}});
+    render(out,r.text,isSite,true);
+    chat.msgs.push({role:"assistant",content:r.text});save();
+  }catch(err){
+    if(mine.signal.aborted&&partial&&chat===cur){render(out,partial,isSite,true);chat.msgs.push({role:"assistant",content:partial});save();return}
+    if(chat===cur)chat.msgs.pop();out.remove();
+    if(mine.signal.aborted)return;
+    if(err&&err.code==="not_granted")add("err","Permission was declined, so Jarvis can't answer. Reload and allow it when asked.");
+    else if(err&&err.code==="rate_limited")add("err","Too many requests. Wait a moment and try again.");
+    else add("err","Something went wrong: "+((err&&err.message)||"unknown error")+". Try sending it again.");
+  }finally{if(ctrl===mine){busy=false;send.textContent="Send";send.disabled=!sample}q.focus()}
+});
+q.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(!busy)f.requestSubmit()}});
+q.addEventListener("input",()=>{q.style.height="auto";q.style.height=Math.min(q.scrollHeight,160)+"px"});
+/* theme */
+const root=document.documentElement;
+try{const t=localStorage.getItem("jarvis:theme");if(t)root.dataset.theme=t}catch(e){}
+$("theme").onclick=()=>{
+  const order=["","dark","light"],i=(order.indexOf(root.dataset.theme||"")+1)%3,t=order[i];
+  if(t)root.dataset.theme=t;else delete root.dataset.theme;
+  try{localStorage.setItem("jarvis:theme",t)}catch(e){}
+  $("theme").textContent=t?(t==="dark"?"Dark":"Light"):"Auto";
+};
+/* image attach */
+$("attach").onclick=()=>$("file").click();
+$("file").onchange=e=>{
+  const file=e.target.files[0];e.target.value="";
+  const th=$("thumbs");th.innerHTML="";pending=null;
+  if(!file)return;
+  if(file.size>5e6){th.textContent="That image is over 5 MB. Choose a smaller one.";return}
+  pending=file;
+  const im=document.createElement("img");im.alt="Attached image";im.src=URL.createObjectURL(file);
+  const rm=document.createElement("button");rm.type="button";rm.textContent="Remove";rm.onclick=()=>{pending=null;th.innerHTML=""};
+  th.append(im,rm);
+};
+/* voice input */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+  const mic=$("mic");mic.hidden=false;let rec=null,on=false;
+  mic.onclick=()=>{
+    if(on&&rec){rec.stop();return}
+    rec=new SR();rec.interimResults=false;rec.lang=navigator.language||"en-US";
+    rec.onresult=ev=>{q.value=(q.value+" "+ev.results[0][0].transcript).trim();q.dispatchEvent(new Event("input"))};
+    rec.onerror=()=>{mic.textContent="Mic blocked";setTimeout(()=>mic.textContent="Mic",2000)};
+    rec.onend=()=>{on=false;if(mic.textContent==="Listening…")mic.textContent="Mic"};
+    try{rec.start();on=true;mic.textContent="Listening…"}catch(e){}
+  };
+}
+if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
+buildModes();showEmpty();init();
+</script>
+</body>
+</html>
