@@ -1,18 +1,18 @@
 # Jarvis web app
 
-Files: index.html (the app), api/chat.js (server that calls the AI), manifest + sw.js (make it installable), vercel.json.
+No server and no API key needed. The AI runs through Puter.js, where each person who uses the app signs in with their own free Puter account and covers their own AI usage.
 
-## Deploy on Vercel (free plan works)
-1. Get an API key at console.anthropic.com (needs a few dollars of credit; this is separate from claude.ai).
-2. Make a free account at vercel.com.
-3. Upload this folder: either push it to a GitHub repo and import it in Vercel, or run `npx vercel` inside the folder.
-4. In Vercel > Project > Settings > Environment Variables, add:
-   - ANTHROPIC_API_KEY = your key (required)
-   - ACCESS_CODE = a password only you and friends know (strongly recommended, otherwise anyone with the link spends your credit)
-   - Optional: CHAT_MODEL, SITE_MODEL to change models
-5. Redeploy, open your Vercel link, then Add to Home Screen (Share menu on iPhone, ⋮ menu on Android).
+Files: index.html (the app), manifest.webmanifest + sw.js + icons (make it installable).
+
+## Put it online (free, any one of these)
+- Netlify Drop: go to app.netlify.com/drop and drag this folder onto the page.
+- GitHub Pages: upload the files to a GitHub repo and turn on Pages.
+- Vercel: run `npx vercel` in this folder.
+
+Then open your link and Add to Home Screen (Share menu on iPhone, the ⋮ menu on Android in Chrome).
 
 ## Notes
-- Website builds can take 30-60 seconds. Vercel Hobby stops functions at 60 seconds.
+- The first time someone sends a message, a Puter sign-in window opens. Allow pop-ups.
+- Usage limits depend on each person's Puter account. See puter.com for current terms.
 - Chat history is saved in each person's browser only.
-- Set a spending limit in the Anthropic console.
+- It must be served over https (all three options above do this); opening the file directly will not install as an app.
