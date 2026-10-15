@@ -71,6 +71,8 @@ textarea{flex:1;resize:none;font:inherit;padding:12px 14px;border-radius:12px;bo
 .item button.x{padding:0 14px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted)}
 #pf{flex:1;width:100%;border:0;background:#fff}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.msg.ai a{color:var(--accent,#55c8f4);text-decoration:underline;overflow-wrap:anywhere}.msg.ai p{line-height:1.55}.msg.ai ul,.msg.ai ol{padding-left:1.4rem;margin:.45rem 0 .8rem}.msg.ai li{margin:.25rem 0}.msg.ai strong{font-weight:750}.msg.ai code{overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -175,6 +177,24 @@ function splitSite(text){
   if(!m)return{html:null,rest:text};
   return{html:m[1],done:m[2]==="```",rest:text.slice(0,m.index)+text.slice(m.index+m[0].length)};
 }
+function appendInline(parent, raw){
+  // Render common Markdown safely using DOM nodes (never inject AI HTML).
+  const re=/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>]+)|\*\*(.+?)\*\*|__(.+?)__|\*([^*\n]+)\*|`([^`\n]+)`/g;
+  let last=0,m;
+  while((m=re.exec(raw))){
+    if(m.index>last) parent.append(document.createTextNode(raw.slice(last,m.index)));
+    if(m[1]&&m[2]){
+      const a=document.createElement('a');a.textContent=m[1];a.href=m[2].replace(/[.,!?]+$/,'');a.target='_blank';a.rel='noopener noreferrer';parent.append(a);
+      const tail=m[2].slice(a.href.length);if(tail)parent.append(document.createTextNode(tail));
+    }else if(m[3]){
+      const url=m[3].replace(/[.,!?;:]+$/,'');const a=document.createElement('a');a.textContent=url;a.href=url;a.target='_blank';a.rel='noopener noreferrer';parent.append(a);const tail=m[3].slice(url.length);if(tail)parent.append(document.createTextNode(tail));
+    }else if(m[4]||m[5]){const b=document.createElement('strong');b.textContent=m[4]||m[5];parent.append(b)}
+    else if(m[6]){const em=document.createElement('em');em.textContent=m[6];parent.append(em)}
+    else if(m[7]){const c=document.createElement('code');c.textContent=m[7];parent.append(c)}
+    last=re.lastIndex;
+  }
+  if(last<raw.length)parent.append(document.createTextNode(raw.slice(last)));
+}
 function render(el,text,isSite,final){
   el.textContent="";
   let site=null;
@@ -182,15 +202,18 @@ function render(el,text,isSite,final){
   text.split("```").forEach((seg,i)=>{
     if(i%2===1){
       const nl=seg.indexOf("\n");
-      el.append(codeBlock(nl>-1?seg.slice(0,nl).trim():"",nl>-1?seg.slice(nl+1).replace(/\n$/,""):seg));
+      el.append(codeBlock(nl>-1?seg.slice(0,nl).trim():"",nl>-1?seg.slice(nl+1).replace(/\n$/," ").trimEnd():seg));
     }else{
-      seg.split(/\n{2,}/).forEach(par=>{
-        if(!par.trim())return;
-        const p=document.createElement("p");
-        par.split(/(`[^`\n]+`)/).forEach(s=>{
-          if(s.length>2&&s[0]==="`"&&s.endsWith("`")){const c=document.createElement("code");c.textContent=s.slice(1,-1);p.append(c)}else p.append(s)});
-        el.append(p);
-      });
+      const lines=seg.split(/\r?\n/);let para=[],list=null;
+      const flushPara=()=>{if(!para.length)return;const p=document.createElement("p");appendInline(p,para.join(" ").trim());el.append(p);para=[]};
+      const flushList=()=>{if(!list)return;el.append(list);list=null};
+      for(const line of lines){
+        const lm=/^\s*(?:[-*•]|\d+[.)])\s+(.+)$/.exec(line);
+        if(lm){flushPara();if(!list){list=document.createElement(/^\s*\d+[.)]/.test(line)?"ol":"ul")}const li=document.createElement("li");appendInline(li,lm[1]);list.append(li)}
+        else if(!line.trim()){flushPara();flushList()}
+        else {flushList();para.push(line.trim())}
+      }
+      flushPara();flushList();
     }
   });
   if(site&&site.html){
