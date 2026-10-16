@@ -73,6 +73,9 @@ textarea{flex:1;resize:none;font:inherit;padding:12px 14px;border-radius:12px;bo
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 .msg.ai a{color:var(--accent,#55c8f4);text-decoration:underline;overflow-wrap:anywhere}.msg.ai p{line-height:1.55}.msg.ai ul,.msg.ai ol{padding-left:1.4rem;margin:.45rem 0 .8rem}.msg.ai li{margin:.25rem 0}.msg.ai strong{font-weight:750}.msg.ai code{overflow-wrap:anywhere}
+.acts{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.acts button{background:none;border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-size:13px;color:var(--muted)}
+.acts button:hover{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -238,6 +241,43 @@ function download(html){
 $("pdl").onclick=e=>download(curHtml,e.target);
 $("pclose").onclick=()=>{$("pp").classList.remove("open");$("pf").srcdoc=""};
 
+let voices=[];
+if("speechSynthesis" in window){const lv=()=>{voices=speechSynthesis.getVoices()||[]};lv();speechSynthesis.onvoiceschanged=lv}
+function pickVoice(text){
+  // Hindi (Devanagari) text -> Hindi voice. Everything else, including Hinglish -> Indian English first, then UK/US English.
+  const prefs=/[\u0900-\u097F]/.test(text)?["hi-in","hi"]:["en-in","en-gb","en-us","en"];
+  for(const p of prefs){const v=voices.find(v=>v.lang&&v.lang.replace("_","-").toLowerCase().startsWith(p));if(v)return v}
+  return null;
+}
+function speakText(text,btn){
+  if(!("speechSynthesis" in window))return;
+  if(speechSynthesis.speaking){speechSynthesis.cancel();btn.textContent="Listen";return}
+  const clean=text.replace(/```[\s\S]*?```/g," ").replace(/\[([^\]]+)\]\([^)]*\)/g,"$1").replace(/https?:\/\/\S+/g,"link").replace(/[*_#`>]/g,"").trim();
+  if(!clean)return;
+  const u=new SpeechSynthesisUtterance(clean),v=pickVoice(clean);
+  if(v){u.voice=v;u.lang=v.lang}else u.lang=/[\u0900-\u097F]/.test(clean)?"hi-IN":"en-IN";
+  u.onend=u.onerror=()=>{btn.textContent="Listen"};
+  btn.textContent="Stop";speechSynthesis.speak(u);
+}
+function actions(el,text){
+  const a=document.createElement("div");a.className="acts";
+  const mk=(t,fn)=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>fn(b);a.append(b);return b};
+  mk("Copy",b=>copy(text,b));
+  if("speechSynthesis" in window)mk("Listen",b=>speakText(text,b));
+  document.querySelectorAll(".regen").forEach(x=>x.remove());
+  mk("Regenerate",()=>regen()).classList.add("regen");
+  el.append(a);
+}
+function regen(){
+  if(busy)return;
+  const ms=chat.msgs;if(ms.length<2)return;
+  const u=ms[ms.length-2];if(u.role!=="user")return;
+  if("speechSynthesis" in window)speechSynthesis.cancel();
+  ms.length-=2;
+  const nodes=log.querySelectorAll(".msg");
+  if(nodes.length>=2){nodes[nodes.length-1].remove();nodes[nodes.length-2].remove()}
+  q.value=u.content.replace(/ \[image attached\]$/,"");f.requestSubmit();
+}
 function add(cls,text,isSite){
   if(log.querySelector(".empty"))log.innerHTML="";
   const d=document.createElement("div");d.className="msg "+cls;
@@ -246,7 +286,7 @@ function add(cls,text,isSite){
 }
 function loadChat(c){
   chat=c;mode=c.mode||"chat";buildModes();log.innerHTML="";
-  c.msgs.forEach(m=>add(m.role==="user"?"user":"ai",m.content,mode==="site"));
+  c.msgs.forEach(m=>{const d=add(m.role==="user"?"user":"ai",m.content,mode==="site");if(m.role!=="user")actions(d,m.content)});
   if(!c.msgs.length)showEmpty();
 }
 function openHistory(){
@@ -310,7 +350,7 @@ f.addEventListener("submit",async e=>{
     const r=await sample([{role:"user",content:MODES[mode].sys+"\n\nThe conversation follows. Reply to the last message."},{role:"assistant",content:"Understood."},...chat.msgs.map(m=>({role:m.role,content:m.content}))],{
       cache:false,webSearch,signal:mine.signal,modelTier:isSite?"complex":"default",...(img?{images:[img]}:{}),
       onText:({text})=>{partial=text;render(out,text,isSite,false);log.scrollTop=log.scrollHeight}});
-    render(out,r.text,isSite,true);
+    render(out,r.text,isSite,true);actions(out,r.text);
     chat.msgs.push({role:"assistant",content:r.text});save();
   }catch(err){
     if(mine.signal.aborted&&partial&&chat===cur){render(out,partial,isSite,true);chat.msgs.push({role:"assistant",content:partial});save();return}
