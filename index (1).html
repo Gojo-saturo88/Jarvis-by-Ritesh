@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jarvis</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0B1118">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<style>
+:root{--bg:#0B1118;--surface:#131D28;--ink:#E8EEF4;--muted:#8A9BAD;--line:#243445;--accent:#4FC3F7;--accent-ink:#062033;--code:#0A1017;--err:#FF8A80;
+--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#EEF3F8;--surface:#fff;--ink:#0F2233;--muted:#5A6E80;--line:#CFDAE5;--accent:#0B79B5;--accent-ink:#fff;--code:#EAF0F6;--err:#B3261E}}
+:root[data-theme="light"]{--bg:#EEF3F8;--surface:#fff;--ink:#0F2233;--muted:#5A6E80;--line:#CFDAE5;--accent:#0B79B5;--accent-ink:#fff;--code:#EAF0F6;--err:#B3261E}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--sans)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button{font:inherit;color:inherit;cursor:pointer}
+.app{display:flex;flex-direction:column;height:100%;max-width:860px;margin:0 auto;padding:0 16px}
+header{padding:16px 0 10px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-size:24px;font-weight:800;letter-spacing:-.03em;margin:0;display:flex;align-items:center;gap:10px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.hbtns{display:flex;gap:6px}
+.ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:14px;color:var(--muted)}
+.ghost:hover{color:var(--ink)}
+.modes{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px}
+.modes button{flex:none;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;font-size:14px}
+.modes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+#log{flex:1;overflow-y:auto;padding:8px 0 16px}
+.msg{margin:0 0 16px}
+.msg.user{margin-left:auto;width:fit-content;max-width:85%;background:var(--accent);color:var(--accent-ink);padding:10px 14px;border-radius:14px;white-space:pre-wrap}
+.msg.ai{background:var(--surface);border:1px solid var(--line);padding:14px 16px;border-radius:14px;overflow-wrap:anywhere}
+.msg.ai p{margin:0 0 .8em;white-space:pre-wrap}
+.msg.ai p:last-child{margin:0}
+.msg.ai code{font:14px var(--mono);background:var(--code);padding:1px 5px;border-radius:4px}
+.cb{margin:0 0 .8em;border-radius:10px;background:var(--code);overflow:hidden}
+.cbh{display:flex;justify-content:space-between;align-items:center;padding:4px 8px 4px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.cbh button{background:none;border:0;font-size:13px;color:var(--accent);padding:4px 8px}
+.cb pre{margin:0;padding:12px 14px;overflow-x:auto}
+.cb pre code{background:none;padding:0}
+.site{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:10px}
+.site b{flex:1 1 100%}
+.site button{padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:transparent;font-size:14px}
+.site button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.msg.err{color:var(--err);font-size:14px}
+.empty{color:var(--muted);text-align:center;margin-top:9vh}
+.empty h2{color:var(--ink);font-size:20px;margin:0 0 6px}
+.ex{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.ex button{font-size:14px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface)}
+form{display:flex;gap:8px;padding:8px 0 16px}
+textarea{flex:1;resize:none;font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);max-height:160px}
+#send{font-weight:700;padding:0 20px;border-radius:12px;border:0;background:var(--accent);color:var(--accent-ink)}
+#send:disabled{opacity:.5;cursor:default}
+.iconb{padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--ink)}
+#thumbs{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted);padding-bottom:4px}
+#thumbs:empty{display:none}
+.wm{flex:none;text-align:center;font-size:12px;color:var(--muted);opacity:.8;padding:0 0 12px;margin-top:-8px;user-select:none}
+#thumbs img{height:44px;border-radius:6px}
+#thumbs button{background:none;border:0;color:var(--accent);font-size:14px}
+.panel{position:fixed;inset:0;background:var(--bg);z-index:10;display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.panel.open{display:flex}
+.ph{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.ph h2{margin:0;font-size:18px}
+#list{overflow-y:auto;padding:12px 16px;max-width:860px;width:100%;margin:0 auto}
+.item{display:flex;gap:8px;margin-bottom:8px}
+.item button.t{flex:1;text-align:left;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item button.x{padding:0 14px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--muted)}
+#pf{flex:1;width:100%;border:0;background:#fff}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.msg.ai a{color:var(--accent,#55c8f4);text-decoration:underline;overflow-wrap:anywhere}.msg.ai p{line-height:1.55}.msg.ai ul,.msg.ai ol{padding-left:1.4rem;margin:.45rem 0 .8rem}.msg.ai li{margin:.25rem 0}.msg.ai strong{font-weight:750}.msg.ai code{overflow-wrap:anywhere}
+.acts{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.acts button{background:none;border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-size:13px;color:var(--muted)}
+.acts button:hover{color:var(--ink)}
+.sbody{padding:16px;max-width:860px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.sbody label{font-size:14px;color:var(--muted);margin-top:6px}
+.sbody input,.sbody textarea{flex:none;resize:vertical;font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);width:100%}
+.srow{display:flex;gap:8px;margin-top:10px}
+.sbtn{padding:10px 22px;border-radius:10px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:repeating-linear-gradient(0deg,rgba(79,195,247,.035) 0 1px,transparent 1px 4px),radial-gradient(ellipse at 50% -10%,rgba(79,195,247,.18),transparent 60%)}
+.app{position:relative;z-index:1}
+header,.hbtns{flex-wrap:wrap}
+.ghost{padding:6px 10px;font-size:13px}
+.reactor{width:30px;height:30px;border-radius:50%;border:2px solid var(--accent);box-shadow:0 0 14px var(--accent),inset 0 0 10px var(--accent);display:inline-block;flex:none;animation:spin 8s linear infinite;background:radial-gradient(circle,var(--accent) 0 22%,transparent 24%),conic-gradient(transparent 0 20%,var(--accent) 20% 25%,transparent 25% 45%,var(--accent) 45% 50%,transparent 50% 70%,var(--accent) 70% 75%,transparent 75%)}
+.speaking .reactor,.listening .reactor{animation-duration:1.2s;box-shadow:0 0 26px var(--accent),inset 0 0 14px var(--accent)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bl{from{opacity:.25}to{opacity:1}}
+.msg.typing::after{content:"";display:inline-block;width:6px;height:6px;margin-left:10px;border-radius:50%;background:var(--accent);box-shadow:12px 0 var(--accent),24px 0 var(--accent);animation:bl .8s infinite alternate}
+.ts{display:block;font-size:11px;opacity:.7;margin-top:4px}
+.acts .ts{margin:0 0 0 auto;align-self:center}
+.drawer{position:fixed;top:0;bottom:0;left:0;width:min(90vw,340px);transform:translateX(-102%);transition:transform .25s;z-index:12;background:var(--surface);border-right:1px solid var(--line);overflow-y:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 24px}
+.drawer.open{transform:none}
+#bd{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:11;display:none}
+#bd.open{display:block}
+.drawer h3{margin:18px 0 6px;font-size:15px;color:var(--accent)}
+.drawer textarea,.drawer input[type=text]{width:100%;flex:none;resize:vertical;font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.drawer .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.drawer .row input[type=text]{flex:1;width:auto}
+.drawer small{display:block;color:var(--muted);font-size:13px;line-height:1.45}
+.task{display:flex;align-items:center;gap:8px;margin:6px 0}
+.task span{flex:1;overflow-wrap:anywhere}
+.task.done span{text-decoration:line-through;opacity:.6}
+#net{display:none;background:var(--err);color:#fff;text-align:center;font-size:13px;padding:4px;position:relative;z-index:2}
+#stopv{position:fixed;right:14px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:9;background:var(--surface)}
+.src{font-size:12px;color:var(--accent);margin-right:6px;align-self:center}
+</style>
+</head>
+<body>
+<div id="net" role="status">You are offline. Chat needs internet; notes and tasks still work.</div>
+<div class="app">
+<header>
+  <h1 class="brand"><span class="reactor" aria-hidden="true"></span>Jarvis</h1>
+  <div class="hbtns"><button class="ghost" id="tools" type="button" aria-label="Open tools sidebar">☰ Tools</button><button class="ghost" id="set" type="button" aria-label="Settings">⚙️</button><button class="ghost" id="theme" type="button">Theme</button><button class="ghost" id="hist" type="button">History</button><button class="ghost" id="new" type="button">New chat</button></div>
+</header>
+<div class="modes" id="modes" role="group" aria-label="Mode"></div>
+<div id="log" aria-live="polite"></div>
+<div id="thumbs"></div>
+<form id="f">
+  <textarea id="q" rows="1" maxlength="4000" aria-label="Your message"></textarea>
+  <input type="file" id="file" accept="image/*" hidden>
+  <button class="iconb" id="attach" type="button" aria-label="Attach an image" hidden>Image</button>
+  <button class="iconb" id="mic" type="button" aria-label="Speak your message" hidden>Mic</button>
+  <button id="send" type="submit">Send</button>
+</form>
+<div class="wm">Made by Ritesh</div>
+</div>
+
+<div id="bd"></div>
+<aside class="drawer" id="dr" aria-label="Tools sidebar">
+ <div class="row" style="justify-content:space-between;align-items:center"><b>Tools</b><button class="ghost" id="dclose" type="button">Close</button></div>
+ <h3>Notes</h3>
+ <textarea id="notes" rows="6" placeholder="Write class notes here. Saved on this device." aria-label="Notes"></textarea>
+ <div class="row"><button class="ghost" id="nsum" type="button">Summarize</button><button class="ghost" id="nquiz" type="button">Quiz me</button></div>
+ <h3>Tasks</h3>
+ <div class="row"><input type="text" id="tin" maxlength="120" placeholder="Add a task" aria-label="New task"><button class="ghost" id="tadd" type="button">Add</button></div>
+ <div id="tl"></div>
+ <h3>Voice</h3>
+ <label class="task"><input type="checkbox" id="aspeak"><span>Speak replies automatically</span></label>
+ <h3>Internet vs AI</h3>
+ <small id="stats"></small>
+ <h3>Privacy and data</h3>
+ <small>Saved on this device only: chats, notes, tasks, theme and custom instructions. Internet-first lookups send the key words of your question straight from your browser to public services (Wikipedia, Open-Meteo weather, ExchangeRate-API, dictionaryapi.dev). Only when AI is needed is your message sent to Puter and the AI provider (this includes web search for news and prices). Voice input uses your browser's speech service, which may process audio online. No passwords or API keys are stored here.</small>
+ <div class="row"><button class="ghost" id="clr" type="button">Clear this chat</button><button class="ghost" id="delh" type="button">Delete chat history</button><button class="ghost" id="dela" type="button">Delete all my data</button></div>
+</aside>
+<button class="ghost" id="stopv" type="button" hidden>Stop voice</button>
+<div class="panel" id="hp" role="dialog" aria-label="Chat history">
+  <div class="ph"><h2>History</h2><button class="ghost" id="hclose" type="button">Close</button></div>
+  <div id="list"></div>
+</div>
+<div class="panel" id="sp" role="dialog" aria-label="Custom instructions">
+  <div class="ph"><h2>Custom instructions</h2><button class="ghost" id="sclose" type="button">Close</button></div>
+  <div class="sbody">
+    <label for="cname">Assistant ka naam</label>
+    <input id="cname" maxlength="24" placeholder="Jarvis">
+    <label for="cins">Style aur instructions</label>
+    <textarea id="cins" rows="6" maxlength="1000" placeholder="Jaise: Hinglish me baat karo, short jawab do, mujhe 'bhai' bulao."></textarea>
+    <div class="srow"><button class="sbtn" id="ssave" type="button">Save</button><button class="ghost" id="sreset" type="button">Reset</button></div>
+  </div>
+</div>
+<div class="panel" id="pp" role="dialog" aria-label="Website preview">
+  <div class="ph"><h2>Preview</h2><div class="hbtns"><button class="ghost" id="pdl" type="button">Download</button><button class="ghost" id="pclose" type="button">Close</button></div></div>
+  <iframe id="pf" title="Website preview" sandbox="allow-scripts"></iframe>
+</div>
+
+<script src="https://js.puter.com/v2/"></script>
+<script>
+const MODES={
+ chat:{name:"General",ph:"Ask anything…",ex:["Weather in Mumbai","Who is APJ Abdul Kalam","100 USD to INR"],
+  sys:"You are Jarvis, a helpful and friendly AI assistant. Answer clearly and accurately. Be concise unless asked for detail."},
+ maths:{name:"Maths",ph:"Type a maths problem…",ex:["Solve 3x² − 12x + 9 = 0","Differentiate x·sin(x)","What is 15% of 240?"],
+  sys:"You are Jarvis, a patient maths tutor. Solve problems step by step, show every line of working, and state the final answer clearly. Use plain text notation (x^2, sqrt(x))."},
+ code:{name:"Code",ph:"Describe the code you need…",ex:["Python function to reverse a linked list","Explain async/await in JavaScript","Fix: for i in range(10) print(i)"],
+  sys:"You are Jarvis, an expert programmer. Give working code in fenced code blocks with a language tag, then a short explanation. Prefer simple, readable solutions."},
+ write:{name:"Writing",ph:"What should I write or improve?",ex:["Write a polite email asking for a deadline extension","Make this sound more professional: hey, need the report asap","Write a short story about a lighthouse"],
+  sys:"You are Jarvis, a skilled writing assistant. Help draft, edit and improve emails, essays, stories and messages. Match the requested tone and length. When editing, give the improved text first, then a brief note on what you changed."},
+ study:{name:"Study",ph:"What are you studying?",ex:["Teach me photosynthesis","Quiz me on the causes of World War 1","Make flashcards for basic French greetings"],
+  sys:"You are Jarvis, a friendly study helper. Explain ideas simply with examples, then check understanding with one short question or mini quiz. Offer summaries and flashcards when asked."},
+ trans:{name:"Translate",ph:"Text to translate, and the language…",ex:["Translate to Spanish: Where is the train station?","Translate to French: Thank you for your help","Translate to English: Gracias por todo"],
+  sys:"You are Jarvis, a translator. Translate the user's text into the language they ask for. If no language is given and the text is English, translate to Spanish; otherwise translate to English. Give the translation first, then a short pronunciation or usage note if helpful."},
+ creative:{name:"Creative",ph:"Give me an idea, story or poem prompt…",ex:["Write a short story about a robot learning to paint","Give me 10 names for a science club","Write a poem about monsoon rain"],
+ sys:"You are Jarvis, an imaginative creative assistant. Help with stories, poems, ideas, names, slogans and brainstorming. Offer fresh, original options and ask one short follow-up question if useful."},
+ site:{name:"Website",ph:"Describe the website you want…",ex:["A landing page for a coffee shop","A personal portfolio for a photographer","A to-do list app that works in the browser"],
+  sys:"You are Jarvis, a web designer and developer. When asked for a website, reply with one short sentence, then ONE complete self-contained HTML file inside a single ```html code block. Put all CSS in <style> and all JavaScript in <script>. Make it responsive, accessible and attractive with a distinctive, deliberate design. No external images, fonts, scripts or network requests (use CSS shapes, emoji or inline SVG instead). Keep it under about 250 lines. When asked to change the site, return the full updated file in one ```html block."}
+};
+const $=id=>document.getElementById(id);
+const log=$("log"),q=$("q"),send=$("send"),f=$("f");
+let mode="chat",chat=newChat(),sample=null,downloads=null,busy=false,ctrl=null,curHtml="",pending=null,canImg=false,partial="";
+
+function newChat(){return{id:Date.now().toString(36),title:"",mode:"chat",msgs:[]}}
+function store(){try{return JSON.parse(localStorage.getItem("jarvis:chats")||"[]")}catch(e){return[]}}
+function save(){
+  if(!chat.msgs.length)return;
+  try{
+    let all=store().filter(c=>c.id!==chat.id);all.unshift(chat);all=all.slice(0,20);
+    while(all.length>1&&JSON.stringify(all).length>1.5e6)all.pop();
+    localStorage.setItem("jarvis:chats",JSON.stringify(all));
+  }catch(e){}
+}
+
+function buildModes(){
+  const m=$("modes");m.innerHTML="";
+  Object.keys(MODES).forEach(k=>{
+    const b=document.createElement("button");b.type="button";b.textContent=MODES[k].name;
+    b.setAttribute("aria-pressed",k===mode);
+    b.onclick=()=>{mode=k;chat.mode=k;buildModes();q.placeholder=MODES[k].ph;if(!chat.msgs.length)showEmpty()};
+    m.append(b);
+  });
+  q.placeholder=MODES[mode].ph;
+}
+function showEmpty(){
+  log.innerHTML="";
+  const d=document.createElement("div");d.className="empty";
+  const h=document.createElement("h2");h.textContent="Hi, I'm "+aiName()+".";
+  d.append(h,mode==="site"?"Describe a website and I'll build it.":(mode==="chat"||mode==="maths")?"Internet-first: I look things up online (Wikipedia, weather, exchange rates, dictionary, calculator) and use AI only when needed.":"Ask me a question.");
+  const ex=document.createElement("div");ex.className="ex";
+  MODES[mode].ex.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>{q.value=t;f.requestSubmit()};ex.append(b)});
+  d.append(ex);log.append(d);
+}
+
+async function copy(text,btn){
+  let ok=false;
+  try{await navigator.clipboard.writeText(text);ok=true}catch(e){
+    try{const t=document.createElement("textarea");t.value=text;document.body.append(t);t.select();ok=document.execCommand("copy");t.remove()}catch(e2){}
+  }
+  const old=btn.textContent;btn.textContent=ok?"Copied":"Select and copy manually";setTimeout(()=>btn.textContent=old,1600);
+}
+function codeBlock(lang,body){
+  const w=document.createElement("div");w.className="cb";
+  const h=document.createElement("div");h.className="cbh";
+  const l=document.createElement("span");l.textContent=lang||"code";
+  const b=document.createElement("button");b.type="button";b.textContent="Copy code";b.onclick=()=>copy(body,b);
+  h.append(l,b);
+  const pre=document.createElement("pre"),c=document.createElement("code");c.textContent=body;pre.append(c);
+  w.append(h,pre);return w;
+}
+function splitSite(text){
+  const m=/```html[ \t]*\n([\s\S]*?)(```|$)/.exec(text);
+  if(!m)return{html:null,rest:text};
+  return{html:m[1],done:m[2]==="```",rest:text.slice(0,m.index)+text.slice(m.index+m[0].length)};
+}
+function appendInline(parent, raw){
+  // Render common Markdown safely using DOM nodes (never inject AI HTML).
+  const re=/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>]+)|\*\*(.+?)\*\*|__(.+?)__|\*([^*\n]+)\*|`([^`\n]+)`/g;
+  let last=0,m;
+  while((m=re.exec(raw))){
+    if(m.index>last) parent.append(document.createTextNode(raw.slice(last,m.index)));
+    if(m[1]&&m[2]){
+      const a=document.createElement('a');a.textContent=m[1];a.href=m[2].replace(/[.,!?]+$/,'');a.target='_blank';a.rel='noopener noreferrer';parent.append(a);
+      const tail=m[2].slice(a.href.length);if(tail)parent.append(document.createTextNode(tail));
+    }else if(m[3]){
+      const url=m[3].replace(/[.,!?;:]+$/,'');const a=document.createElement('a');a.textContent=url;a.href=url;a.target='_blank';a.rel='noopener noreferrer';parent.append(a);const tail=m[3].slice(url.length);if(tail)parent.append(document.createTextNode(tail));
+    }else if(m[4]||m[5]){const b=document.createElement('strong');b.textContent=m[4]||m[5];parent.append(b)}
+    else if(m[6]){const em=document.createElement('em');em.textContent=m[6];parent.append(em)}
+    else if(m[7]){const c=document.createElement('code');c.textContent=m[7];parent.append(c)}
+    last=re.lastIndex;
+  }
+  if(last<raw.length)parent.append(document.createTextNode(raw.slice(last)));
+}
+function render(el,text,isSite,final){
+  el.textContent="";
+  let site=null;
+  if(isSite){const s=splitSite(text);site=s;text=s.rest}
+  text.split("```").forEach((seg,i)=>{
+    if(i%2===1){
+      const nl=seg.indexOf("\n");
+      el.append(codeBlock(nl>-1?seg.slice(0,nl).trim():"",nl>-1?seg.slice(nl+1).replace(/\n$/," ").trimEnd():seg));
+    }else{
+      const lines=seg.split(/\r?\n/);let para=[],list=null;
+      const flushPara=()=>{if(!para.length)return;const p=document.createElement("p");appendInline(p,para.join(" ").trim());el.append(p);para=[]};
+      const flushList=()=>{if(!list)return;el.append(list);list=null};
+      for(const line of lines){
+        const lm=/^\s*(?:[-*•]|\d+[.)])\s+(.+)$/.exec(line);
+        if(lm){flushPara();if(!list){list=document.createElement(/^\s*\d+[.)]/.test(line)?"ol":"ul")}const li=document.createElement("li");appendInline(li,lm[1]);list.append(li)}
+        else if(!line.trim()){flushPara();flushList()}
+        else {flushList();para.push(line.trim())}
+      }
+      flushPara();flushList();
+    }
+  });
+  if(site&&site.html){
+    const box=document.createElement("div");box.className="site";
+    const t=document.createElement("b");
+    if(!site.done&&!final){t.textContent="Building your website…";box.append(t)}
+    else{
+      t.textContent=site.done?"Your website is ready":"Your website is ready (the reply was cut off, so the end may be missing)";box.append(t);
+      const pv=document.createElement("button");pv.type="button";pv.className="p";pv.textContent="Preview";pv.onclick=()=>openPreview(site.html);
+      const dl=document.createElement("button");dl.type="button";dl.textContent="Download";dl.onclick=()=>download(site.html,dl);
+      const cp=document.createElement("button");cp.type="button";cp.textContent="Copy code";cp.onclick=()=>copy(site.html,cp);
+      box.append(pv,dl,cp);
+    }
+    el.append(box);
+  }
+}
+function openPreview(html){curHtml=html;$("pf").srcdoc=html;$("pp").classList.add("open")}
+function download(html){
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download="website.html";
+  document.body.append(a);a.click();a.remove();
+}
+$("pdl").onclick=e=>download(curHtml,e.target);
+$("pclose").onclick=()=>{$("pp").classList.remove("open");$("pf").srcdoc=""};
+
+let voices=[];
+if("speechSynthesis" in window){const lv=()=>{voices=speechSynthesis.getVoices()||[]};lv();speechSynthesis.onvoiceschanged=lv}
+function pickVoice(text){
+  // Hindi (Devanagari) text -> Hindi voice. Everything else, including Hinglish -> Indian English first, then UK/US English.
+  const prefs=/[\u0900-\u097F]/.test(text)?["hi-in","hi"]:["en-in","en-gb","en-us","en"];
+  for(const p of prefs){const v=voices.find(v=>v.lang&&v.lang.replace("_","-").toLowerCase().startsWith(p));if(v)return v}
+  return null;
+}
+function speakText(text,btn){
+  if(!("speechSynthesis" in window))return;
+  if(speechSynthesis.speaking){speechSynthesis.cancel();btn.textContent="Listen";voiceUI(false);return}
+  const clean=text.replace(/```[\s\S]*?```/g," ").replace(/\[([^\]]+)\]\([^)]*\)/g,"$1").replace(/https?:\/\/\S+/g,"link").replace(/[*_#`>]/g,"").trim();
+  if(!clean)return;
+  const u=new SpeechSynthesisUtterance(clean),v=pickVoice(clean);
+  if(v){u.voice=v;u.lang=v.lang}else u.lang=/[\u0900-\u097F]/.test(clean)?"hi-IN":"en-IN";
+  u.onend=u.onerror=()=>{btn.textContent="Listen";voiceUI(false)};
+  btn.textContent="Stop";voiceUI(true);speechSynthesis.speak(u);
+}
+function actions(el,text,ts){
+  const a=document.createElement("div");a.className="acts";
+  const mk=(t,fn)=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>fn(b);a.append(b);return b};
+  mk("Copy",b=>copy(text,b));
+  if("speechSynthesis" in window)mk("Listen",b=>speakText(text,b));
+  document.querySelectorAll(".regen").forEach(x=>x.remove());
+  mk("Regenerate",()=>regen()).classList.add("regen");
+  if(ts){const t=document.createElement("time");t.className="ts";t.textContent=fmt(ts);a.append(t)}el.append(a);
+}
+function regen(){
+  if(busy)return;
+  const ms=chat.msgs;if(ms.length<2)return;
+  const u=ms[ms.length-2];if(u.role!=="user")return;
+  if("speechSynthesis" in window)speechSynthesis.cancel();
+  ms.length-=2;
+  const nodes=log.querySelectorAll(".msg");
+  if(nodes.length>=2){nodes[nodes.length-1].remove();nodes[nodes.length-2].remove()}
+  q.value=u.content.replace(/ \[image attached\]$/,"");f.requestSubmit();
+}
+function fmt(ts){return ts?new Date(ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):""}
+function add(cls,text,isSite,ts){
+  if(log.querySelector(".empty"))log.innerHTML="";
+  const d=document.createElement("div");d.className="msg "+cls;
+  if(cls==="ai")render(d,text,isSite,true);else{d.textContent=text;if(ts){const t=document.createElement("time");t.className="ts";t.textContent=fmt(ts);d.append(t)}}
+  log.append(d);log.scrollTop=log.scrollHeight;return d;
+}
+function loadChat(c){
+  chat=c;mode=c.mode||"chat";buildModes();log.innerHTML="";
+  c.msgs.forEach(m=>{const d=add(m.role==="user"?"user":"ai",m.content,mode==="site",m.ts);if(m.role!=="user"){actions(d,m.content,m.ts);badge(d,m.src)}});
+  if(!c.msgs.length)showEmpty();
+}
+function openHistory(){
+  const l=$("list");l.innerHTML="";
+  const all=store();
+  if(!all.length){const p=document.createElement("p");p.style.color="var(--muted)";p.textContent="No saved chats yet. Chats are saved on this device as you go.";l.append(p)}
+  all.forEach(c=>{
+    const r=document.createElement("div");r.className="item";
+    const t=document.createElement("button");t.type="button";t.className="t";t.textContent=(MODES[c.mode]?MODES[c.mode].name+": ":"")+(c.title||"Untitled");
+    t.onclick=()=>{if(ctrl)ctrl.abort();busy=false;send.disabled=!sample;loadChat(c);$("hp").classList.remove("open")};
+    const x=document.createElement("button");x.type="button";x.className="x";x.textContent="Delete";x.setAttribute("aria-label","Delete chat");
+    x.onclick=()=>{try{localStorage.setItem("jarvis:chats",JSON.stringify(store().filter(z=>z.id!==c.id)))}catch(e){}if(c.id===chat.id){chat=newChat();chat.mode=mode;showEmpty()}openHistory()};
+    r.append(t,x);l.append(r);
+  });
+  $("hp").classList.add("open");
+}
+$("hist").onclick=openHistory;
+$("hclose").onclick=()=>$("hp").classList.remove("open");
+$("new").onclick=()=>{if(ctrl)ctrl.abort();busy=false;send.disabled=!sample;chat=newChat();chat.mode=mode;showEmpty()};
+
+async function init(){
+  sample=async(msgs,o)=>{
+    if(!navigator.onLine)throw new Error("You are offline. Connect to the internet and try again.");
+let grounded=false;
+if((o.mode==="chat"||o.mode==="maths")&&!(o.images&&o.images.length)){
+  const last=(msgs[msgs.length-1].content||"");
+  let hit=null;try{hit=await netAnswer(last)}catch(e){}
+  if(hit&&hit.text)return{text:hit.text,truncated:false,src:"net"};
+  if(hit&&hit.context){grounded=true;msgs=[...msgs.slice(0,-1),{role:"user",content:"Use these internet sources if they are relevant (mention the source link at the end); otherwise answer normally.\n\nSOURCES:\n"+hit.context+"\n\nQUESTION: "+last}]}
+}
+if(!window.puter || !puter.ai || typeof puter.ai.chat !== "function"){
+      throw new Error("Puter AI could not load. Check your internet connection and reload the page.");
+    }
+    if(o.signal && o.signal.aborted) throw new DOMException("Request aborted", "AbortError");
+
+    // Claude handles normal chats. OpenAI + Puter's built-in web_search handles live web questions.
+    const options = o.webSearch
+      ? { model: "openai/gpt-5.6-luna", tools: [{ type: "web_search" }], normalize: true }
+      : { model: "anthropic/claude-sonnet-5-5" };
+
+    let response;
+    if(o.images && o.images.length){
+      // Photo question: send the image together with the question and the style instructions.
+      const head=((msgs[0]&&msgs[0].content)||"").split("\n\nThe conversation")[0];
+      const ask=(msgs[msgs.length-1].content||"").replace(/ \[image attached\]$/,"");
+      response = await puter.ai.chat(head+"\n\n"+ask, o.images[0], {model:"anthropic/claude-sonnet-5-5"});
+    }else{
+      response = await puter.ai.chat(msgs, options);
+    }
+    if(o.signal && o.signal.aborted) throw new DOMException("Request aborted", "AbortError");
+    const content = response && response.message ? response.message.content : "";
+    const answer = typeof content === "string"
+      ? content
+      : Array.isArray(content)
+        ? content.filter(part => part && part.type === "text").map(part => part.text || "").join("\n")
+        : "";
+    if(!answer) throw new Error("Puter returned an empty response. Try again.");
+    return {text: answer, truncated: false, src: (grounded||o.webSearch)?"mix":"ai"};
+  };
+}
+f.addEventListener("submit",async e=>{
+  e.preventDefault();
+  let text=q.value.trim();
+  if(busy){if(ctrl)ctrl.abort();return}
+  if((!text&&!pending)||!sample)return;
+  if(!text)text="Describe this image.";
+  busy=true;send.textContent="Stop";q.value="";q.style.height="auto";const img=pending;pending=null;$("thumbs").innerHTML="";partial="";
+  const isSite=mode==="site";
+  // Automatically use web search for questions that likely need current/live information.
+  const webSearch = mode==="chat" && !img && /\b(search|internet|latest|today|current|news|weather|price|recent|2026|who is|what happened|online|look up|web)\b|aaj|abhi|taaza|khabar|mausam|daam|internet par|search karo|latest bata/i.test(text);
+  const cur=chat;chat.mode=mode;if(!chat.title)chat.title=text.slice(0,60);
+  add("user",img?text+"\n[image attached]":text,false,Date.now());
+  chat.msgs.push({role:"user",content:img?text+" [image attached]":text,ts:Date.now()});
+  const out=add("ai","Thinking…",false);out.classList.add("typing");
+  ctrl=new AbortController();const mine=ctrl;
+  try{
+    const r=await sample([{role:"user",content:customPrompt()+MODES[mode].sys+"\n\nThe conversation follows. Reply to the last message."},{role:"assistant",content:"Understood."},...chat.msgs.map(m=>({role:m.role,content:m.content}))],{
+      cache:false,mode,webSearch,signal:mine.signal,modelTier:isSite?"complex":"default",...(img?{images:[img]}:{}),
+      onText:({text})=>{partial=text;render(out,text,isSite,false);log.scrollTop=log.scrollHeight}});
+    out.classList.remove("typing");render(out,r.text,isSite,true);actions(out,r.text,Date.now());badge(out,r.src);stat(r.src);if(ls.get("jarvis:autospeak",false))speakText(r.text,{});
+    chat.msgs.push({role:"assistant",content:r.text,ts:Date.now(),src:r.src});save();
+  }catch(err){
+    if(mine.signal.aborted&&partial&&chat===cur){render(out,partial,isSite,true);chat.msgs.push({role:"assistant",content:partial});save();return}
+    if(chat===cur)chat.msgs.pop();out.remove();
+    if(mine.signal.aborted)return;
+    if(err&&err.code==="not_granted")add("err","Permission was declined, so Jarvis can't answer. Reload and allow it when asked.");
+    else if(err&&err.code==="rate_limited")add("err","Too many requests. Wait a moment and try again.");
+    else add("err","Something went wrong: "+((err&&err.message)||"unknown error")+". Try sending it again.");
+  }finally{if(ctrl===mine){busy=false;send.textContent="Send";send.disabled=!sample}q.focus()}
+});
+q.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(!busy)f.requestSubmit()}});
+q.addEventListener("input",()=>{q.style.height="auto";q.style.height=Math.min(q.scrollHeight,160)+"px"});
+/* theme */
+const root=document.documentElement;
+try{const t=localStorage.getItem("jarvis:theme");if(t)root.dataset.theme=t}catch(e){}
+$("theme").onclick=()=>{
+  const order=["","dark","light"],i=(order.indexOf(root.dataset.theme||"")+1)%3,t=order[i];
+  if(t)root.dataset.theme=t;else delete root.dataset.theme;
+  try{localStorage.setItem("jarvis:theme",t)}catch(e){}
+  $("theme").textContent=t?(t==="dark"?"Dark":"Light"):"Auto";
+};
+/* image attach */
+$("attach").onclick=()=>$("file").click();
+$("file").onchange=e=>{
+  const file=e.target.files[0];e.target.value="";
+  const th=$("thumbs");th.innerHTML="";pending=null;
+  if(!file)return;
+  if(file.size>5e6){th.textContent="That image is over 5 MB. Choose a smaller one.";return}
+  pending=file;
+  const im=document.createElement("img");im.alt="Attached image";im.src=URL.createObjectURL(file);
+  const rm=document.createElement("button");rm.type="button";rm.textContent="Remove";rm.onclick=()=>{pending=null;th.innerHTML=""};
+  th.append(im,rm);
+};
+/* voice input */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+  const mic=$("mic");mic.hidden=false;let rec=null,on=false;
+  mic.onclick=()=>{
+    if(on&&rec){rec.stop();return}
+    rec=new SR();rec.interimResults=false;rec.lang=navigator.language||"en-US";
+    rec.onresult=ev=>{q.value=(q.value+" "+ev.results[0][0].transcript).trim();q.dispatchEvent(new Event("input"))};
+    rec.onerror=ev=>{const m=ev&&ev.error==="not-allowed"?"Mic blocked":ev&&ev.error==="no-speech"?"No speech":"Mic error";mic.textContent=m;document.body.classList.remove("listening");setTimeout(()=>mic.textContent="Mic",2200)};
+    rec.onend=()=>{on=false;document.body.classList.remove("listening");if(mic.textContent==="Listening…")mic.textContent="Mic"};
+    try{rec.start();on=true;document.body.classList.add("listening");mic.textContent="Listening…"}catch(e){}
+  };
+}
+if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
+/* custom instructions */
+function custom(){try{return JSON.parse(localStorage.getItem("jarvis:custom")||"{}")}catch(e){return{}}}
+function aiName(){return (custom().name||"").trim()||"Jarvis"}
+function customPrompt(){
+  const c=custom();let t="Your name is "+aiName()+". ";
+  if(c.ins&&c.ins.trim())t+="The user's custom instructions (follow them unless they conflict with safety or the output format required below): "+c.ins.trim()+"\n\n";
+  return t;
+}
+function applyName(){
+  const n=aiName();
+  const br=document.querySelector(".brand");if(br&&br.lastChild)br.lastChild.textContent=n;
+  document.title=n;
+  const h=document.querySelector(".empty h2");if(h)h.textContent="Hi, I'm "+n+".";
+}
+$("set").onclick=()=>{const c=custom();$("cname").value=c.name||"";$("cins").value=c.ins||"";$("sp").classList.add("open")};
+$("sclose").onclick=()=>$("sp").classList.remove("open");
+$("ssave").onclick=()=>{try{localStorage.setItem("jarvis:custom",JSON.stringify({name:$("cname").value.trim().slice(0,24),ins:$("cins").value.trim().slice(0,1000)}))}catch(e){}applyName();$("sp").classList.remove("open")};
+$("sreset").onclick=()=>{try{localStorage.removeItem("jarvis:custom")}catch(e){}$("cname").value="";$("cins").value="";applyName()};
+$("attach").hidden=false;
+/* sidebar, notes, tasks, voice, privacy */
+const DR=$("dr"),BD=$("bd");
+const openDr=o=>{DR.classList.toggle("open",o);BD.classList.toggle("open",o)};
+$("tools").onclick=()=>openDr(true);$("dclose").onclick=()=>openDr(false);BD.onclick=()=>openDr(false);
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const notes=$("notes");notes.value=ls.get("jarvis:notes","");notes.oninput=()=>ls.set("jarvis:notes",notes.value);
+function askNotes(pre){
+  if(!notes.value.trim()){notes.focus();return}
+  if(busy)return;
+  mode="study";chat=newChat();chat.mode=mode;buildModes();showEmpty();
+  q.value=pre+"\n\n"+notes.value.trim().slice(0,3500);openDr(false);f.requestSubmit();
+}
+$("nsum").onclick=()=>askNotes("Summarize these notes into short revision points:");
+$("nquiz").onclick=()=>askNotes("Quiz me with 5 questions on these notes, one at a time:");
+let tasks=ls.get("jarvis:tasks",[]);
+function drawTasks(){
+  const l=$("tl");l.innerHTML="";
+  tasks.forEach((t,i)=>{
+    const r=document.createElement("div");r.className="task"+(t.d?" done":"");
+    const c=document.createElement("input");c.type="checkbox";c.checked=!!t.d;c.setAttribute("aria-label","Mark done");
+    c.onchange=()=>{t.d=c.checked;ls.set("jarvis:tasks",tasks);drawTasks()};
+    const sp=document.createElement("span");sp.textContent=t.t;
+    const x=document.createElement("button");x.type="button";x.className="ghost";x.textContent="\u2715";x.setAttribute("aria-label","Delete task");
+    x.onclick=()=>{tasks.splice(i,1);ls.set("jarvis:tasks",tasks);drawTasks()};
+    r.append(c,sp,x);l.append(r);
+  });
+}
+function addTask(){const v=$("tin").value.trim().slice(0,120);if(!v)return;tasks.unshift({t:v,d:false});tasks=tasks.slice(0,100);ls.set("jarvis:tasks",tasks);$("tin").value="";drawTasks()}
+$("tadd").onclick=addTask;$("tin").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addTask()}};drawTasks();
+function voiceUI(on){document.body.classList.toggle("speaking",on);$("stopv").hidden=!on}
+$("stopv").onclick=()=>{if("speechSynthesis" in window)speechSynthesis.cancel();voiceUI(false)};
+$("aspeak").checked=!!ls.get("jarvis:autospeak",false);
+$("aspeak").onchange=e=>ls.set("jarvis:autospeak",e.target.checked);
+if(!("speechSynthesis" in window))$("aspeak").parentElement.hidden=true;
+$("clr").onclick=()=>{
+  if(!confirm("Clear this chat? This cannot be undone."))return;
+  if(ctrl)ctrl.abort();busy=false;
+  const id=chat.id;try{localStorage.setItem("jarvis:chats",JSON.stringify(store().filter(c=>c.id!==id)))}catch(e){}
+  chat=newChat();chat.mode=mode;showEmpty();openDr(false);
+};
+$("delh").onclick=()=>{
+  if(!confirm("Delete ALL saved chats on this device?"))return;
+  try{localStorage.removeItem("jarvis:chats")}catch(e){}
+  chat=newChat();chat.mode=mode;showEmpty();openDr(false);
+};
+$("dela").onclick=()=>{
+  if(!confirm("Delete chats, notes, tasks and settings from this device?"))return;
+  try{["jarvis:chats","jarvis:notes","jarvis:tasks","jarvis:custom","jarvis:theme","jarvis:autospeak","jarvis:stats"].forEach(k=>localStorage.removeItem(k))}catch(e){}
+  location.reload();
+};
+const netUI=()=>{$("net").style.display=navigator.onLine?"none":"block"};
+addEventListener("online",netUI);addEventListener("offline",netUI);netUI();
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){openDr(false);$("sp").classList.remove("open");$("hp").classList.remove("open")}});
+/* internet-first engine: free public services first, AI only for reasoning, writing and code */
+const J=async u=>{const r=await fetch(u);if(!r.ok)throw new Error("HTTP "+r.status);return r.json()};
+const WMO={0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Fog",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",61:"Light rain",63:"Rain",65:"Heavy rain",71:"Light snow",73:"Snow",75:"Heavy snow",80:"Rain showers",81:"Rain showers",82:"Heavy showers",95:"Thunderstorm",96:"Thunderstorm with hail",99:"Thunderstorm with hail"};
+function calc(t){
+  let e=t.toLowerCase().replace(/(\d+(?:\.\d+)?)\s*%\s*of\s*(\d+(?:\.\d+)?)/g,"($1/100*$2)").replace(/\^/g,"**").replace(/[x\u00d7]/g,"*").replace(/\u00f7/g,"/").replace(/,/g,"");
+  e=e.replace(/^(what is|what's|calculate|solve|compute|kitna hota hai)\s+/,"").replace(/[=?]+$/,"").trim();
+  if(!/^[\d+\-*/().%\s]+$/.test(e)||!/\d/.test(e)||!/[+\-*/%]/.test(e))return null;
+  try{const v=Function('"use strict";return ('+e+')')();return typeof v==="number"&&isFinite(v)?Math.round(v*1e10)/1e10:null}catch(x){return null}
+}
+async function weather(t){
+  if(!/(weather|mausam|temperature|barish)/i.test(t))return null;
+  const u=t.replace(/[?!.]+$/,"");
+  let c=(/\b(?:in|at|of|for)\s+([a-z\s.-]{2,40})$/i.exec(u)||/([a-z\s.-]{2,40})\s+(?:ka|ki|me|mein)\s+(?:mausam|weather|temperature)/i.exec(u)||[])[1];
+  if(!c)return null;c=c.replace(/\b(today|now|right now|aaj|abhi)\b/ig,"").trim();
+  const g=await J("https://geocoding-api.open-meteo.com/v1/search?count=1&name="+encodeURIComponent(c));
+  const p=g.results&&g.results[0];if(!p)return null;
+  const w=await J("https://api.open-meteo.com/v1/forecast?latitude="+p.latitude+"&longitude="+p.longitude+"&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1");
+  const k=w.current,d=w.daily;
+  return{text:"**Weather in "+p.name+(p.country?", "+p.country:"")+"**\n\n- Now: "+k.temperature_2m+"\u00b0C, "+(WMO[k.weather_code]||"")+"\n- Humidity: "+k.relative_humidity_2m+"%\n- Wind: "+k.wind_speed_10m+" km/h\n- Today: "+d.temperature_2m_min[0]+"\u00b0C to "+d.temperature_2m_max[0]+"\u00b0C\n\nSource: [Open-Meteo](https://open-meteo.com)"};
+}
+async function fx(t){
+  const m=/(\d+(?:\.\d+)?)\s*([a-z]{3})\s*(?:to|in|into)\s*([a-z]{3})\b/i.exec(t);if(!m)return null;
+  const a=+m[1],f=m[2].toUpperCase(),o=m[3].toUpperCase();
+  const d=await J("https://open.er-api.com/v6/latest/"+f),r=d.rates&&d.rates[o];if(!r)return null;
+  return{text:"**"+a+" "+f+" = "+(a*r).toFixed(2)+" "+o+"**\n\nRate: 1 "+f+" = "+r+" "+o+"\n\nSource: [ExchangeRate-API](https://www.exchangerate-api.com)"};
+}
+async function dict(t){
+  const u=t.trim(),m=/^(?:meaning of|define|definition of)\s+([a-z'-]+)\??$/i.exec(u)||/^what does ([a-z'-]+) mean\??$/i.exec(u)||/^([a-z'-]+)\s+(?:ka\s+)?meaning\??$/i.exec(u);
+  if(!m)return null;
+  const d=await J("https://api.dictionaryapi.dev/api/v2/entries/en/"+encodeURIComponent(m[1])),e=d&&d[0];if(!e)return null;
+  return{text:"**"+e.word+"**"+(e.phonetic?" "+e.phonetic:"")+"\n\n"+e.meanings.slice(0,3).map(x=>"- *"+x.partOfSpeech+"*: "+((x.definitions[0]||{}).definition||"")).join("\n")+"\n\nSource: [dictionaryapi.dev](https://dictionaryapi.dev)"};
+}
+async function wiki(t,hi){
+  const topic=t.replace(/[?!.]+$/,"").replace(/^(who is|who was|what is|what are|tell me about|explain|about)\s+/i,"").replace(/\s+(kaun hai|kaun tha|kya hai|kya hota hai)$/i,"").trim();
+  if(!topic||topic.length>80)return null;
+  const base=hi?"https://hi.wikipedia.org":"https://en.wikipedia.org";
+  const s=await J(base+"/w/api.php?action=query&list=search&format=json&origin=*&srlimit=1&srsearch="+encodeURIComponent(topic));
+  const h=s.query&&s.query.search&&s.query.search[0];if(!h)return null;
+  const p=await J(base+"/api/rest_v1/page/summary/"+encodeURIComponent(h.title.replace(/ /g,"_")));
+  if(!p.extract)return null;
+  return{title:p.title,extract:p.extract,url:(p.content_urls&&p.content_urls.desktop&&p.content_urls.desktop.page)||base+"/wiki/"+encodeURIComponent(h.title)};
+}
+async function netAnswer(t){
+  t=t.trim();if(!t||t.length>200)return null;
+  const c=calc(t);if(c!==null)return{text:"**"+c+"**\n\n(calculated on your device)"};
+  if(/\b(time now|current time|what('?s| is) the (time|date)|what time is it|today'?s date|date today|samay kya|aaj ki date)\b/i.test(t))return{text:"**"+new Date().toLocaleString([],{dateStyle:"full",timeStyle:"short"})+"**\n\n(from your device clock)"};
+  for(const fn of [weather,fx,dict]){try{const r=await fn(t);if(r)return r}catch(e){}}
+  const u=t.replace(/[?!.\s]+$/,"");
+  const info=/^(who is|who was|what is|what are|tell me about|about)\s+\S/i.test(u)||/\s(kaun hai|kaun tha|kya hai|kya hota hai)$/i.test(u);
+  const why=/\b(why|how|explain|compare|difference|vs|kaise|kyun|kyon|samjha\w*|summari[sz]e)\b/i.test(u);
+  const me=/\b(you|your|yours|jarvis|my|mera|meri|tum|tumhara|aap)\b/i.test(u);
+  if((info||why)&&!me&&(why||u.split(/\s+/).length<=8)){
+    try{const w=await wiki(u,/[\u0900-\u097F]/.test(u));if(w){const src="["+w.title+" on Wikipedia]("+w.url+")";return why?{context:src+"\n"+w.extract}:{text:"**"+w.title+"**\n\n"+w.extract+"\n\nSource: "+src}}}catch(e){}
+  }
+  return null;
+}
+function badge(el,src){const a=el.querySelector(".acts");if(!a||!src)return;const b=document.createElement("span");b.className="src";b.textContent=src==="net"?"\ud83c\udf10 Internet":src==="mix"?"\ud83c\udf10+\ud83e\udd16 Internet + AI":"\ud83e\udd16 AI";a.prepend(b)}
+function stat(src){const k=src==="net"||src==="mix"?src:"ai",s=ls.get("jarvis:stats",{net:0,mix:0,ai:0});s[k]=(s[k]||0)+1;ls.set("jarvis:stats",s);showStats()}
+function showStats(){const s=ls.get("jarvis:stats",{net:0,mix:0,ai:0}),n=s.net+s.mix+s.ai;$("stats").textContent=n?Math.round((s.net+s.mix)/n*100)+"% of answers used the internet ("+s.net+" internet only, "+s.mix+" internet + AI, "+s.ai+" AI only).":"No answers yet."}
+showStats();
+buildModes();showEmpty();applyName();init();
+</script>
+</body>
+</html>
