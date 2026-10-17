@@ -106,6 +106,30 @@ header,.hbtns{flex-wrap:wrap}
 .task.done span{text-decoration:line-through;opacity:.6}
 #net{display:none;background:var(--err);color:#fff;text-align:center;font-size:13px;padding:4px;position:relative;z-index:2}
 #stopv{position:fixed;right:14px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:9;background:var(--surface)}
+.src{font-size:12px;color:var(--accent);margin-right:6px;align-self:center}
+:root{--side:340px}
+.app{max-width:none;margin:0;padding:0 18px}
+header,.modes,#log,#thumbs,form,.wm{width:100%;max-width:780px;margin-left:auto;margin-right:auto}
+header{border-bottom:1px solid var(--line);padding:12px 0}
+.msg{margin:0 0 24px}
+.msg.user{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:20px 20px 4px 20px;max-width:80%}
+.msg.ai{background:none;border:0;padding:2px 0 2px 44px;position:relative;font-size:16.5px;line-height:1.7}
+.msg.ai::before{content:"";position:absolute;left:0;top:4px;width:30px;height:30px;border-radius:50%;border:2px solid var(--accent);box-shadow:0 0 12px var(--accent),inset 0 0 8px var(--accent);background:radial-gradient(circle,var(--accent) 0 20%,transparent 22%)}
+.empty{margin-top:11vh}
+.empty h2{font-size:30px;letter-spacing:-.02em}
+.ex{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:22px}
+.ex button{border-radius:16px;padding:14px 16px;font-size:14.5px;line-height:1.4;text-align:left}
+.ex button:hover{border-color:var(--accent)}
+form{border:1px solid var(--line);border-radius:26px;background:var(--surface);padding:8px 8px 8px 16px;align-items:flex-end;margin-bottom:6px;box-shadow:0 4px 24px rgba(0,0,0,.18)}
+form textarea{border:0;background:transparent;padding:10px 4px;outline:none;max-height:180px}
+form .iconb{border:0;background:transparent;font-size:19px;padding:0 6px;height:40px}
+#send{width:40px;height:40px;padding:0;border-radius:50%;font-size:20px;flex:none}
+.srcs{margin-top:12px}
+.srcs a{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:1px 11px;margin:3px 6px 3px 0;text-decoration:none;font-size:13px;background:var(--surface)}
+.newc{width:100%;padding:11px;border-radius:12px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-weight:700;margin:12px 0 8px}
+form textarea:focus-visible{outline:none}form:focus-within{border-color:var(--accent)}#csr{margin-bottom:8px}#cl .item{margin-bottom:4px}#cl .t{padding:9px 12px;font-size:14px}#cl .t.cur{border-color:var(--accent)}#cl .x{padding:0 10px}
+#down{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(120px + env(safe-area-inset-bottom,0px));z-index:9;border-radius:50%;width:38px;height:38px;padding:0;background:var(--surface)}
+@media (min-width:900px){.drawer{transform:none;z-index:5;width:var(--side)}#bd{display:none!important}#tools,#dclose{display:none}.app{margin-left:var(--side)}}
 </style>
 </head>
 <body>
@@ -121,9 +145,9 @@ header,.hbtns{flex-wrap:wrap}
 <form id="f">
   <textarea id="q" rows="1" maxlength="4000" aria-label="Your message"></textarea>
   <input type="file" id="file" accept="image/*" hidden>
-  <button class="iconb" id="attach" type="button" aria-label="Attach an image" hidden>Image</button>
-  <button class="iconb" id="mic" type="button" aria-label="Speak your message" hidden>Mic</button>
-  <button id="send" type="submit">Send</button>
+  <button class="iconb" id="attach" type="button" aria-label="Attach an image" hidden>📎</button>
+  <button class="iconb" id="mic" type="button" aria-label="Speak your message" hidden>🎤</button>
+  <button id="send" type="submit" aria-label="Send">↑</button>
 </form>
 <div class="wm">Made by Ritesh</div>
 </div>
@@ -131,6 +155,9 @@ header,.hbtns{flex-wrap:wrap}
 <div id="bd"></div>
 <aside class="drawer" id="dr" aria-label="Tools sidebar">
  <div class="row" style="justify-content:space-between;align-items:center"><b>Tools</b><button class="ghost" id="dclose" type="button">Close</button></div>
+ <button class="newc" id="dnew" type="button">＋ New chat</button>
+ <input type="text" id="csr" placeholder="Search chats" aria-label="Search chats">
+ <div id="cl"></div>
  <h3>Notes</h3>
  <textarea id="notes" rows="6" placeholder="Write class notes here. Saved on this device." aria-label="Notes"></textarea>
  <div class="row"><button class="ghost" id="nsum" type="button">Summarize</button><button class="ghost" id="nquiz" type="button">Quiz me</button></div>
@@ -139,10 +166,13 @@ header,.hbtns{flex-wrap:wrap}
  <div id="tl"></div>
  <h3>Voice</h3>
  <label class="task"><input type="checkbox" id="aspeak"><span>Speak replies automatically</span></label>
+ <h3>Internet vs AI</h3>
+ <small id="stats"></small>
  <h3>Privacy and data</h3>
- <small>Saved on this device only: chats, notes, tasks, theme and custom instructions. Messages you send are processed by Puter and the AI provider to produce an answer (questions needing live info use web search). Voice input uses your browser's speech service, which may process audio online. No passwords or API keys are stored here.</small>
- <div class="row"><button class="ghost" id="clr" type="button">Clear this chat</button><button class="ghost" id="delh" type="button">Delete chat history</button><button class="ghost" id="dela" type="button">Delete all my data</button></div>
+ <small>Saved on this device only: chats, notes, tasks, theme and custom instructions. Internet-first lookups send the key words of your question straight from your browser to public services (Wikipedia, Open-Meteo weather, ExchangeRate-API, dictionaryapi.dev). Only when AI is needed is your message sent to Puter and the AI provider (this includes web search for news and prices). Voice input uses your browser's speech service, which may process audio online. No passwords or API keys are stored here.</small>
+ <div class="row"><button class="ghost" id="exp" type="button">Export chat</button><button class="ghost" id="clr" type="button">Clear this chat</button><button class="ghost" id="delh" type="button">Delete chat history</button><button class="ghost" id="dela" type="button">Delete all my data</button></div>
 </aside>
+<button class="ghost" id="down" type="button" aria-label="Scroll to latest" hidden>↓</button>
 <button class="ghost" id="stopv" type="button" hidden>Stop voice</button>
 <div class="panel" id="hp" role="dialog" aria-label="Chat history">
   <div class="ph"><h2>History</h2><button class="ghost" id="hclose" type="button">Close</button></div>
@@ -166,7 +196,7 @@ header,.hbtns{flex-wrap:wrap}
 <script src="https://js.puter.com/v2/"></script>
 <script>
 const MODES={
- chat:{name:"General",ph:"Ask anything…",ex:["Explain how vaccines work","Plan a 3-day study schedule","Give me a short pep talk"],
+ chat:{name:"General",ph:"Ask anything…",ex:["Weather in Mumbai","Who is APJ Abdul Kalam","100 USD to INR"],
   sys:"You are Jarvis, a helpful and friendly AI assistant. Answer clearly and accurately. Be concise unless asked for detail."},
  maths:{name:"Maths",ph:"Type a maths problem…",ex:["Solve 3x² − 12x + 9 = 0","Differentiate x·sin(x)","What is 15% of 240?"],
   sys:"You are Jarvis, a patient maths tutor. Solve problems step by step, show every line of working, and state the final answer clearly. Use plain text notation (x^2, sqrt(x))."},
@@ -194,7 +224,7 @@ function save(){
   try{
     let all=store().filter(c=>c.id!==chat.id);all.unshift(chat);all=all.slice(0,20);
     while(all.length>1&&JSON.stringify(all).length>1.5e6)all.pop();
-    localStorage.setItem("jarvis:chats",JSON.stringify(all));
+    localStorage.setItem("jarvis:chats",JSON.stringify(all));try{drawChats()}catch(e2){}
   }catch(e){}
 }
 
@@ -212,7 +242,7 @@ function showEmpty(){
   log.innerHTML="";
   const d=document.createElement("div");d.className="empty";
   const h=document.createElement("h2");h.textContent="Hi, I'm "+aiName()+".";
-  d.append(h,mode==="site"?"Describe a website and I'll build it.":"Ask me a question.");
+  d.append(h,mode==="site"?"Describe a website and I'll build it.":(mode==="chat"||mode==="maths")?"Internet-first: I look things up online (Wikipedia, weather, exchange rates, dictionary, calculator) and use AI only when needed.":"Ask me a question.");
   const ex=document.createElement("div");ex.className="ex";
   MODES[mode].ex.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>{q.value=t;f.requestSubmit()};ex.append(b)});
   d.append(ex);log.append(d);
@@ -267,7 +297,7 @@ function render(el,text,isSite,final){
       el.append(codeBlock(nl>-1?seg.slice(0,nl).trim():"",nl>-1?seg.slice(nl+1).replace(/\n$/," ").trimEnd():seg));
     }else{
       const lines=seg.split(/\r?\n/);let para=[],list=null;
-      const flushPara=()=>{if(!para.length)return;const p=document.createElement("p");appendInline(p,para.join(" ").trim());el.append(p);para=[]};
+      const flushPara=()=>{if(!para.length)return;const p=document.createElement("p");appendInline(p,para.join(" ").trim());if(/^(\*\*)?sources?:?/i.test(p.textContent))p.className="srcs";el.append(p);para=[]};
       const flushList=()=>{if(!list)return;el.append(list);list=null};
       for(const line of lines){
         const lm=/^\s*(?:[-*•]|\d+[.)])\s+(.+)$/.exec(line);
@@ -346,7 +376,7 @@ function add(cls,text,isSite,ts){
 }
 function loadChat(c){
   chat=c;mode=c.mode||"chat";buildModes();log.innerHTML="";
-  c.msgs.forEach(m=>{const d=add(m.role==="user"?"user":"ai",m.content,mode==="site",m.ts);if(m.role!=="user")actions(d,m.content,m.ts)});
+  c.msgs.forEach(m=>{const d=add(m.role==="user"?"user":"ai",m.content,mode==="site",m.ts);if(m.role!=="user"){actions(d,m.content,m.ts);badge(d,m.src)}});
   if(!c.msgs.length)showEmpty();
 }
 function openHistory(){
@@ -370,6 +400,14 @@ $("new").onclick=()=>{if(ctrl)ctrl.abort();busy=false;send.disabled=!sample;chat
 async function init(){
   sample=async(msgs,o)=>{
     if(!navigator.onLine)throw new Error("You are offline. Connect to the internet and try again.");
+let grounded=false,fb=null;
+if((o.mode==="chat"||o.mode==="maths")&&!(o.images&&o.images.length)){
+  const last=(msgs[msgs.length-1].content||"");
+  let hit=null;try{hit=await netAnswer(last)}catch(e){}
+  if(hit&&hit.text)return{text:hit.text,truncated:false,src:"net"};
+  if(hit&&hit.context){grounded=true;fb=hit.fallback||null;msgs=[...msgs.slice(0,-1),{role:"user",content:"Write a clear, well-organised final answer to the QUESTION using the numbered internet sources below. Stay accurate and do not invent facts that are not supported. Cite inline like [1], and finish with one line that starts with 'Sources:' followed by markdown links, e.g. [1 Title](url) [2 Title](url). If the sources are not relevant, answer normally.\n\nSOURCES:\n"+hit.context+"\n\nQUESTION: "+last}]}
+}
+if(o.webSearch){msgs=[...msgs.slice(0,-1),{role:"user",content:msgs[msgs.length-1].content+"\n\n(Answer from current web results in a clear, well-organised way. Finish with one line starting with 'Sources:' containing markdown links to the pages you used.)"}]}
 if(!window.puter || !puter.ai || typeof puter.ai.chat !== "function"){
       throw new Error("Puter AI could not load. Check your internet connection and reload the page.");
     }
@@ -387,7 +425,7 @@ if(!window.puter || !puter.ai || typeof puter.ai.chat !== "function"){
       const ask=(msgs[msgs.length-1].content||"").replace(/ \[image attached\]$/,"");
       response = await puter.ai.chat(head+"\n\n"+ask, o.images[0], {model:"anthropic/claude-sonnet-5-5"});
     }else{
-      response = await puter.ai.chat(msgs, options);
+      try{response = await puter.ai.chat(msgs, options)}catch(e){if(fb)return{text:fb,truncated:false,src:"net"};throw e}
     }
     if(o.signal && o.signal.aborted) throw new DOMException("Request aborted", "AbortError");
     const content = response && response.message ? response.message.content : "";
@@ -396,8 +434,8 @@ if(!window.puter || !puter.ai || typeof puter.ai.chat !== "function"){
       : Array.isArray(content)
         ? content.filter(part => part && part.type === "text").map(part => part.text || "").join("\n")
         : "";
-    if(!answer) throw new Error("Puter returned an empty response. Try again.");
-    return {text: answer, truncated: false};
+    if(!answer){if(fb)return{text:fb,truncated:false,src:"net"};throw new Error("Puter returned an empty response. Try again.")}
+    return {text: answer, truncated: false, src: (grounded||o.webSearch)?"mix":"ai"};
   };
 }
 f.addEventListener("submit",async e=>{
@@ -406,7 +444,7 @@ f.addEventListener("submit",async e=>{
   if(busy){if(ctrl)ctrl.abort();return}
   if((!text&&!pending)||!sample)return;
   if(!text)text="Describe this image.";
-  busy=true;send.textContent="Stop";q.value="";q.style.height="auto";const img=pending;pending=null;$("thumbs").innerHTML="";partial="";
+  busy=true;send.textContent="■";q.value="";q.style.height="auto";const img=pending;pending=null;$("thumbs").innerHTML="";partial="";
   const isSite=mode==="site";
   // Automatically use web search for questions that likely need current/live information.
   const webSearch = mode==="chat" && !img && /\b(search|internet|latest|today|current|news|weather|price|recent|2026|who is|what happened|online|look up|web)\b|aaj|abhi|taaza|khabar|mausam|daam|internet par|search karo|latest bata/i.test(text);
@@ -417,10 +455,10 @@ f.addEventListener("submit",async e=>{
   ctrl=new AbortController();const mine=ctrl;
   try{
     const r=await sample([{role:"user",content:customPrompt()+MODES[mode].sys+"\n\nThe conversation follows. Reply to the last message."},{role:"assistant",content:"Understood."},...chat.msgs.map(m=>({role:m.role,content:m.content}))],{
-      cache:false,webSearch,signal:mine.signal,modelTier:isSite?"complex":"default",...(img?{images:[img]}:{}),
+      cache:false,mode,webSearch,signal:mine.signal,modelTier:isSite?"complex":"default",...(img?{images:[img]}:{}),
       onText:({text})=>{partial=text;render(out,text,isSite,false);log.scrollTop=log.scrollHeight}});
-    out.classList.remove("typing");render(out,r.text,isSite,true);actions(out,r.text,Date.now());if(ls.get("jarvis:autospeak",false))speakText(r.text,{});
-    chat.msgs.push({role:"assistant",content:r.text,ts:Date.now()});save();
+    out.classList.remove("typing");render(out,r.text,isSite,true);actions(out,r.text,Date.now());badge(out,r.src);stat(r.src);if(ls.get("jarvis:autospeak",false))speakText(r.text,{});
+    chat.msgs.push({role:"assistant",content:r.text,ts:Date.now(),src:r.src});save();
   }catch(err){
     if(mine.signal.aborted&&partial&&chat===cur){render(out,partial,isSite,true);chat.msgs.push({role:"assistant",content:partial});save();return}
     if(chat===cur)chat.msgs.pop();out.remove();
@@ -428,7 +466,7 @@ f.addEventListener("submit",async e=>{
     if(err&&err.code==="not_granted")add("err","Permission was declined, so Jarvis can't answer. Reload and allow it when asked.");
     else if(err&&err.code==="rate_limited")add("err","Too many requests. Wait a moment and try again.");
     else add("err","Something went wrong: "+((err&&err.message)||"unknown error")+". Try sending it again.");
-  }finally{if(ctrl===mine){busy=false;send.textContent="Send";send.disabled=!sample}q.focus()}
+  }finally{if(ctrl===mine){busy=false;send.textContent="↑";send.disabled=!sample}q.focus()}
 });
 q.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();if(!busy)f.requestSubmit()}});
 q.addEventListener("input",()=>{q.style.height="auto";q.style.height=Math.min(q.scrollHeight,160)+"px"});
@@ -461,8 +499,8 @@ if(SR){
     if(on&&rec){rec.stop();return}
     rec=new SR();rec.interimResults=false;rec.lang=navigator.language||"en-US";
     rec.onresult=ev=>{q.value=(q.value+" "+ev.results[0][0].transcript).trim();q.dispatchEvent(new Event("input"))};
-    rec.onerror=ev=>{const m=ev&&ev.error==="not-allowed"?"Mic blocked":ev&&ev.error==="no-speech"?"No speech":"Mic error";mic.textContent=m;document.body.classList.remove("listening");setTimeout(()=>mic.textContent="Mic",2200)};
-    rec.onend=()=>{on=false;document.body.classList.remove("listening");if(mic.textContent==="Listening…")mic.textContent="Mic"};
+    rec.onerror=ev=>{const m=ev&&ev.error==="not-allowed"?"Mic blocked":ev&&ev.error==="no-speech"?"No speech":"Mic error";mic.textContent=m;document.body.classList.remove("listening");setTimeout(()=>mic.textContent="🎤",2200)};
+    rec.onend=()=>{on=false;document.body.classList.remove("listening");if(mic.textContent==="Listening…")mic.textContent="🎤"};
     try{rec.start();on=true;document.body.classList.add("listening");mic.textContent="Listening…"}catch(e){}
   };
 }
@@ -533,12 +571,107 @@ $("delh").onclick=()=>{
 };
 $("dela").onclick=()=>{
   if(!confirm("Delete chats, notes, tasks and settings from this device?"))return;
-  try{["jarvis:chats","jarvis:notes","jarvis:tasks","jarvis:custom","jarvis:theme","jarvis:autospeak"].forEach(k=>localStorage.removeItem(k))}catch(e){}
+  try{["jarvis:chats","jarvis:notes","jarvis:tasks","jarvis:custom","jarvis:theme","jarvis:autospeak","jarvis:stats"].forEach(k=>localStorage.removeItem(k))}catch(e){}
   location.reload();
 };
 const netUI=()=>{$("net").style.display=navigator.onLine?"none":"block"};
 addEventListener("online",netUI);addEventListener("offline",netUI);netUI();
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){openDr(false);$("sp").classList.remove("open");$("hp").classList.remove("open")}});
+/* internet-first engine: free public services first, AI only for reasoning, writing and code */
+const J=async u=>{const r=await fetch(u);if(!r.ok)throw new Error("HTTP "+r.status);return r.json()};
+const WMO={0:"Clear sky",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Fog",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",61:"Light rain",63:"Rain",65:"Heavy rain",71:"Light snow",73:"Snow",75:"Heavy snow",80:"Rain showers",81:"Rain showers",82:"Heavy showers",95:"Thunderstorm",96:"Thunderstorm with hail",99:"Thunderstorm with hail"};
+function calc(t){
+  let e=t.toLowerCase().replace(/(\d+(?:\.\d+)?)\s*%\s*of\s*(\d+(?:\.\d+)?)/g,"($1/100*$2)").replace(/\^/g,"**").replace(/[x\u00d7]/g,"*").replace(/\u00f7/g,"/").replace(/,/g,"");
+  e=e.replace(/^(what is|what's|calculate|solve|compute|kitna hota hai)\s+/,"").replace(/[=?]+$/,"").trim();
+  if(!/^[\d+\-*/().%\s]+$/.test(e)||!/\d/.test(e)||!/[+\-*/%]/.test(e))return null;
+  try{const v=Function('"use strict";return ('+e+')')();return typeof v==="number"&&isFinite(v)?Math.round(v*1e10)/1e10:null}catch(x){return null}
+}
+async function weather(t){
+  if(!/(weather|mausam|temperature|barish)/i.test(t))return null;
+  const u=t.replace(/[?!.]+$/,"");
+  let c=(/\b(?:in|at|of|for)\s+([a-z\s.-]{2,40})$/i.exec(u)||/([a-z\s.-]{2,40})\s+(?:ka|ki|me|mein)\s+(?:mausam|weather|temperature)/i.exec(u)||[])[1];
+  if(!c)return null;c=c.replace(/\b(today|now|right now|aaj|abhi)\b/ig,"").trim();
+  const g=await J("https://geocoding-api.open-meteo.com/v1/search?count=1&name="+encodeURIComponent(c));
+  const p=g.results&&g.results[0];if(!p)return null;
+  const w=await J("https://api.open-meteo.com/v1/forecast?latitude="+p.latitude+"&longitude="+p.longitude+"&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1");
+  const k=w.current,d=w.daily;
+  return{text:"**Weather in "+p.name+(p.country?", "+p.country:"")+"**\n\n- Now: "+k.temperature_2m+"\u00b0C, "+(WMO[k.weather_code]||"")+"\n- Humidity: "+k.relative_humidity_2m+"%\n- Wind: "+k.wind_speed_10m+" km/h\n- Today: "+d.temperature_2m_min[0]+"\u00b0C to "+d.temperature_2m_max[0]+"\u00b0C\n\nSource: [Open-Meteo](https://open-meteo.com)"};
+}
+async function fx(t){
+  const m=/(\d+(?:\.\d+)?)\s*([a-z]{3})\s*(?:to|in|into)\s*([a-z]{3})\b/i.exec(t);if(!m)return null;
+  const a=+m[1],f=m[2].toUpperCase(),o=m[3].toUpperCase();
+  const d=await J("https://open.er-api.com/v6/latest/"+f),r=d.rates&&d.rates[o];if(!r)return null;
+  return{text:"**"+a+" "+f+" = "+(a*r).toFixed(2)+" "+o+"**\n\nRate: 1 "+f+" = "+r+" "+o+"\n\nSource: [ExchangeRate-API](https://www.exchangerate-api.com)"};
+}
+async function dict(t){
+  const u=t.trim(),m=/^(?:meaning of|define|definition of)\s+([a-z'-]+)\??$/i.exec(u)||/^what does ([a-z'-]+) mean\??$/i.exec(u)||/^([a-z'-]+)\s+(?:ka\s+)?meaning\??$/i.exec(u);
+  if(!m)return null;
+  const d=await J("https://api.dictionaryapi.dev/api/v2/entries/en/"+encodeURIComponent(m[1])),e=d&&d[0];if(!e)return null;
+  return{text:"**"+e.word+"**"+(e.phonetic?" "+e.phonetic:"")+"\n\n"+e.meanings.slice(0,3).map(x=>"- *"+x.partOfSpeech+"*: "+((x.definitions[0]||{}).definition||"")).join("\n")+"\n\nSource: [dictionaryapi.dev](https://dictionaryapi.dev)"};
+}
+async function wiki(t,hi){
+  const topic=t.replace(/[?!.]+$/,"").replace(/^(who is|who was|what is|what are|tell me about|explain|about)\s+/i,"").replace(/\s+(kaun hai|kaun tha|kya hai|kya hota hai)$/i,"").trim();
+  if(!topic||topic.length>80)return null;
+  const base=hi?"https://hi.wikipedia.org":"https://en.wikipedia.org";
+  const s=await J(base+"/w/api.php?action=query&list=search&format=json&origin=*&srlimit=1&srsearch="+encodeURIComponent(topic));
+  const h=s.query&&s.query.search&&s.query.search[0];if(!h)return null;
+  const p=await J(base+"/api/rest_v1/page/summary/"+encodeURIComponent(h.title.replace(/ /g,"_")));
+  if(!p.extract)return null;
+  return{title:p.title,extract:p.extract,url:(p.content_urls&&p.content_urls.desktop&&p.content_urls.desktop.page)||base+"/wiki/"+encodeURIComponent(h.title)};
+}
+async function wikiMany(t,hi){
+  const topic=t.replace(/[?!.]+$/,"").replace(/^(who is|who was|what is|what are|tell me about|explain|about)\s+/i,"").replace(/\s+(kaun hai|kaun tha|kya hai|kya hota hai)$/i,"").trim();
+  if(!topic||topic.length>80)return[];
+  const base=hi?"https://hi.wikipedia.org":"https://en.wikipedia.org";
+  const s=await J(base+"/w/api.php?action=query&list=search&format=json&origin=*&srlimit=3&srsearch="+encodeURIComponent(topic));
+  const hits=((s.query&&s.query.search)||[]).slice(0,3);
+  const out=await Promise.all(hits.map(h=>J(base+"/api/rest_v1/page/summary/"+encodeURIComponent(h.title.replace(/ /g,"_"))).then(p=>p.extract?{title:p.title,extract:p.extract.slice(0,700),url:(p.content_urls&&p.content_urls.desktop&&p.content_urls.desktop.page)||base+"/wiki/"+encodeURIComponent(h.title)}:null).catch(()=>null)));
+  return out.filter(Boolean);
+}
+async function netAnswer(t){
+  t=t.trim();if(!t||t.length>200)return null;
+  const c=calc(t);if(c!==null)return{text:"**"+c+"**\n\n(calculated on your device)"};
+  if(/\b(time now|current time|what('?s| is) the (time|date)|what time is it|today'?s date|date today|samay kya|aaj ki date)\b/i.test(t))return{text:"**"+new Date().toLocaleString([],{dateStyle:"full",timeStyle:"short"})+"**\n\n(from your device clock)"};
+  for(const fn of [weather,fx,dict]){try{const r=await fn(t);if(r)return r}catch(e){}}
+  const u=t.replace(/[?!.\s]+$/,"");
+  const info=/^(who is|who was|what is|what are|tell me about|about)\s+\S/i.test(u)||/\s(kaun hai|kaun tha|kya hai|kya hota hai)$/i.test(u);
+  const why=/\b(why|how|explain|compare|difference|vs|kaise|kyun|kyon|samjha\w*|summari[sz]e)\b/i.test(u);
+  const me=/\b(you|your|yours|jarvis|my|mera|meri|tum|tumhara|aap)\b/i.test(u);
+  if((info||why)&&!me&&(why||u.split(/\s+/).length<=8)){
+    try{const ws=await wikiMany(u,/[\u0900-\u097F]/.test(u));if(ws.length){
+      const ctx=ws.map((w,i)=>"["+(i+1)+"] "+w.title+" - "+w.url+"\n"+w.extract).join("\n\n");
+      const fbt="**"+ws[0].title+"**\n\n"+ws[0].extract+"\n\nSources: "+ws.map((w,i)=>"["+(i+1)+" "+w.title+"]("+w.url+")").join(" ");
+      return{context:ctx,fallback:why?null:fbt}}}catch(e){}
+  }
+  return null;
+}
+function badge(el,src){const a=el.querySelector(".acts");if(!a||!src)return;const b=document.createElement("span");b.className="src";b.textContent=src==="net"?"\ud83c\udf10 Internet":src==="mix"?"\ud83c\udf10+\ud83e\udd16 Internet + AI":"\ud83e\udd16 AI";a.prepend(b)}
+function stat(src){const k=src==="net"||src==="mix"?src:"ai",s=ls.get("jarvis:stats",{net:0,mix:0,ai:0});s[k]=(s[k]||0)+1;ls.set("jarvis:stats",s);showStats()}
+function showStats(){const s=ls.get("jarvis:stats",{net:0,mix:0,ai:0}),n=s.net+s.mix+s.ai;$("stats").textContent=n?Math.round((s.net+s.mix)/n*100)+"% of answers used the internet ("+s.net+" internet only, "+s.mix+" internet + AI, "+s.ai+" AI only).":"No answers yet."}
+function drawChats(){
+  const l=$("cl");l.innerHTML="";const qv=$("csr").value.toLowerCase();
+  store().filter(c=>!qv||(c.title||"").toLowerCase().includes(qv)).slice(0,30).forEach(c=>{
+    const r=document.createElement("div");r.className="item";
+    const t=document.createElement("button");t.type="button";t.className="t"+(c.id===chat.id?" cur":"");t.textContent=c.title||"Untitled";
+    t.onclick=()=>{if(ctrl)ctrl.abort();busy=false;send.textContent="\u2191";send.disabled=!sample;loadChat(c);if(innerWidth<900)openDr(false);drawChats()};
+    const x=document.createElement("button");x.type="button";x.className="x";x.textContent="\u2715";x.setAttribute("aria-label","Delete chat");
+    x.onclick=()=>{try{localStorage.setItem("jarvis:chats",JSON.stringify(store().filter(z=>z.id!==c.id)))}catch(e){}if(c.id===chat.id){chat=newChat();chat.mode=mode;showEmpty()}drawChats()};
+    r.append(t,x);l.append(r);
+  });
+}
+$("csr").oninput=drawChats;
+$("dnew").onclick=()=>{$("new").click();if(innerWidth<900)openDr(false)};
+["new","clr","delh"].forEach(id=>$(id).addEventListener("click",()=>setTimeout(drawChats,60)));
+$("exp").onclick=()=>{
+  if(!chat.msgs.length)return;
+  const md=chat.msgs.map(m=>(m.role==="user"?"## You\n":"## "+aiName()+"\n")+m.content).join("\n\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([md],{type:"text/markdown"}));a.download="jarvis-chat.md";document.body.append(a);a.click();a.remove();
+};
+log.addEventListener("scroll",()=>{$("down").hidden=log.scrollHeight-log.scrollTop-log.clientHeight<120});
+$("down").onclick=()=>log.scrollTo({top:log.scrollHeight,behavior:"smooth"});
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();$("new").click()}});
+drawChats();
+showStats();
 buildModes();showEmpty();applyName();init();
 </script>
 </body>
