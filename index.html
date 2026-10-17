@@ -76,19 +76,50 @@ textarea{flex:1;resize:none;font:inherit;padding:12px 14px;border-radius:12px;bo
 .acts{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
 .acts button{background:none;border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-size:13px;color:var(--muted)}
 .acts button:hover{color:var(--ink)}
+.sbody{padding:16px;max-width:860px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.sbody label{font-size:14px;color:var(--muted);margin-top:6px}
+.sbody input,.sbody textarea{flex:none;resize:vertical;font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);width:100%}
+.srow{display:flex;gap:8px;margin-top:10px}
+.sbtn{padding:10px 22px;border-radius:10px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:repeating-linear-gradient(0deg,rgba(79,195,247,.035) 0 1px,transparent 1px 4px),radial-gradient(ellipse at 50% -10%,rgba(79,195,247,.18),transparent 60%)}
+.app{position:relative;z-index:1}
+header,.hbtns{flex-wrap:wrap}
+.ghost{padding:6px 10px;font-size:13px}
+.reactor{width:30px;height:30px;border-radius:50%;border:2px solid var(--accent);box-shadow:0 0 14px var(--accent),inset 0 0 10px var(--accent);display:inline-block;flex:none;animation:spin 8s linear infinite;background:radial-gradient(circle,var(--accent) 0 22%,transparent 24%),conic-gradient(transparent 0 20%,var(--accent) 20% 25%,transparent 25% 45%,var(--accent) 45% 50%,transparent 50% 70%,var(--accent) 70% 75%,transparent 75%)}
+.speaking .reactor,.listening .reactor{animation-duration:1.2s;box-shadow:0 0 26px var(--accent),inset 0 0 14px var(--accent)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bl{from{opacity:.25}to{opacity:1}}
+.msg.typing::after{content:"";display:inline-block;width:6px;height:6px;margin-left:10px;border-radius:50%;background:var(--accent);box-shadow:12px 0 var(--accent),24px 0 var(--accent);animation:bl .8s infinite alternate}
+.ts{display:block;font-size:11px;opacity:.7;margin-top:4px}
+.acts .ts{margin:0 0 0 auto;align-self:center}
+.drawer{position:fixed;top:0;bottom:0;left:0;width:min(90vw,340px);transform:translateX(-102%);transition:transform .25s;z-index:12;background:var(--surface);border-right:1px solid var(--line);overflow-y:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 24px}
+.drawer.open{transform:none}
+#bd{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:11;display:none}
+#bd.open{display:block}
+.drawer h3{margin:18px 0 6px;font-size:15px;color:var(--accent)}
+.drawer textarea,.drawer input[type=text]{width:100%;flex:none;resize:vertical;font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.drawer .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.drawer .row input[type=text]{flex:1;width:auto}
+.drawer small{display:block;color:var(--muted);font-size:13px;line-height:1.45}
+.task{display:flex;align-items:center;gap:8px;margin:6px 0}
+.task span{flex:1;overflow-wrap:anywhere}
+.task.done span{text-decoration:line-through;opacity:.6}
+#net{display:none;background:var(--err);color:#fff;text-align:center;font-size:13px;padding:4px;position:relative;z-index:2}
+#stopv{position:fixed;right:14px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:9;background:var(--surface)}
 </style>
 </head>
 <body>
+<div id="net" role="status">You are offline. Chat needs internet; notes and tasks still work.</div>
 <div class="app">
 <header>
-  <h1 class="brand"><span class="dot"></span>Jarvis</h1>
-  <div class="hbtns"><button class="ghost" id="theme" type="button">Theme</button><button class="ghost" id="hist" type="button">History</button><button class="ghost" id="new" type="button">New chat</button></div>
+  <h1 class="brand"><span class="reactor" aria-hidden="true"></span>Jarvis</h1>
+  <div class="hbtns"><button class="ghost" id="tools" type="button" aria-label="Open tools sidebar">☰ Tools</button><button class="ghost" id="set" type="button" aria-label="Settings">⚙️</button><button class="ghost" id="theme" type="button">Theme</button><button class="ghost" id="hist" type="button">History</button><button class="ghost" id="new" type="button">New chat</button></div>
 </header>
 <div class="modes" id="modes" role="group" aria-label="Mode"></div>
 <div id="log" aria-live="polite"></div>
 <div id="thumbs"></div>
 <form id="f">
-  <textarea id="q" rows="1" aria-label="Your message"></textarea>
+  <textarea id="q" rows="1" maxlength="4000" aria-label="Your message"></textarea>
   <input type="file" id="file" accept="image/*" hidden>
   <button class="iconb" id="attach" type="button" aria-label="Attach an image" hidden>Image</button>
   <button class="iconb" id="mic" type="button" aria-label="Speak your message" hidden>Mic</button>
@@ -97,9 +128,35 @@ textarea{flex:1;resize:none;font:inherit;padding:12px 14px;border-radius:12px;bo
 <div class="wm">Made by Ritesh</div>
 </div>
 
+<div id="bd"></div>
+<aside class="drawer" id="dr" aria-label="Tools sidebar">
+ <div class="row" style="justify-content:space-between;align-items:center"><b>Tools</b><button class="ghost" id="dclose" type="button">Close</button></div>
+ <h3>Notes</h3>
+ <textarea id="notes" rows="6" placeholder="Write class notes here. Saved on this device." aria-label="Notes"></textarea>
+ <div class="row"><button class="ghost" id="nsum" type="button">Summarize</button><button class="ghost" id="nquiz" type="button">Quiz me</button></div>
+ <h3>Tasks</h3>
+ <div class="row"><input type="text" id="tin" maxlength="120" placeholder="Add a task" aria-label="New task"><button class="ghost" id="tadd" type="button">Add</button></div>
+ <div id="tl"></div>
+ <h3>Voice</h3>
+ <label class="task"><input type="checkbox" id="aspeak"><span>Speak replies automatically</span></label>
+ <h3>Privacy and data</h3>
+ <small>Saved on this device only: chats, notes, tasks, theme and custom instructions. Messages you send are processed by Puter and the AI provider to produce an answer (questions needing live info use web search). Voice input uses your browser's speech service, which may process audio online. No passwords or API keys are stored here.</small>
+ <div class="row"><button class="ghost" id="clr" type="button">Clear this chat</button><button class="ghost" id="delh" type="button">Delete chat history</button><button class="ghost" id="dela" type="button">Delete all my data</button></div>
+</aside>
+<button class="ghost" id="stopv" type="button" hidden>Stop voice</button>
 <div class="panel" id="hp" role="dialog" aria-label="Chat history">
   <div class="ph"><h2>History</h2><button class="ghost" id="hclose" type="button">Close</button></div>
   <div id="list"></div>
+</div>
+<div class="panel" id="sp" role="dialog" aria-label="Custom instructions">
+  <div class="ph"><h2>Custom instructions</h2><button class="ghost" id="sclose" type="button">Close</button></div>
+  <div class="sbody">
+    <label for="cname">Assistant ka naam</label>
+    <input id="cname" maxlength="24" placeholder="Jarvis">
+    <label for="cins">Style aur instructions</label>
+    <textarea id="cins" rows="6" maxlength="1000" placeholder="Jaise: Hinglish me baat karo, short jawab do, mujhe 'bhai' bulao."></textarea>
+    <div class="srow"><button class="sbtn" id="ssave" type="button">Save</button><button class="ghost" id="sreset" type="button">Reset</button></div>
+  </div>
 </div>
 <div class="panel" id="pp" role="dialog" aria-label="Website preview">
   <div class="ph"><h2>Preview</h2><div class="hbtns"><button class="ghost" id="pdl" type="button">Download</button><button class="ghost" id="pclose" type="button">Close</button></div></div>
@@ -109,7 +166,7 @@ textarea{flex:1;resize:none;font:inherit;padding:12px 14px;border-radius:12px;bo
 <script src="https://js.puter.com/v2/"></script>
 <script>
 const MODES={
- chat:{name:"Chat",ph:"Ask anything…",ex:["Explain how vaccines work","Plan a 3-day study schedule","Give me a short pep talk"],
+ chat:{name:"General",ph:"Ask anything…",ex:["Explain how vaccines work","Plan a 3-day study schedule","Give me a short pep talk"],
   sys:"You are Jarvis, a helpful and friendly AI assistant. Answer clearly and accurately. Be concise unless asked for detail."},
  maths:{name:"Maths",ph:"Type a maths problem…",ex:["Solve 3x² − 12x + 9 = 0","Differentiate x·sin(x)","What is 15% of 240?"],
   sys:"You are Jarvis, a patient maths tutor. Solve problems step by step, show every line of working, and state the final answer clearly. Use plain text notation (x^2, sqrt(x))."},
@@ -121,6 +178,8 @@ const MODES={
   sys:"You are Jarvis, a friendly study helper. Explain ideas simply with examples, then check understanding with one short question or mini quiz. Offer summaries and flashcards when asked."},
  trans:{name:"Translate",ph:"Text to translate, and the language…",ex:["Translate to Spanish: Where is the train station?","Translate to French: Thank you for your help","Translate to English: Gracias por todo"],
   sys:"You are Jarvis, a translator. Translate the user's text into the language they ask for. If no language is given and the text is English, translate to Spanish; otherwise translate to English. Give the translation first, then a short pronunciation or usage note if helpful."},
+ creative:{name:"Creative",ph:"Give me an idea, story or poem prompt…",ex:["Write a short story about a robot learning to paint","Give me 10 names for a science club","Write a poem about monsoon rain"],
+ sys:"You are Jarvis, an imaginative creative assistant. Help with stories, poems, ideas, names, slogans and brainstorming. Offer fresh, original options and ask one short follow-up question if useful."},
  site:{name:"Website",ph:"Describe the website you want…",ex:["A landing page for a coffee shop","A personal portfolio for a photographer","A to-do list app that works in the browser"],
   sys:"You are Jarvis, a web designer and developer. When asked for a website, reply with one short sentence, then ONE complete self-contained HTML file inside a single ```html code block. Put all CSS in <style> and all JavaScript in <script>. Make it responsive, accessible and attractive with a distinctive, deliberate design. No external images, fonts, scripts or network requests (use CSS shapes, emoji or inline SVG instead). Keep it under about 250 lines. When asked to change the site, return the full updated file in one ```html block."}
 };
@@ -152,7 +211,7 @@ function buildModes(){
 function showEmpty(){
   log.innerHTML="";
   const d=document.createElement("div");d.className="empty";
-  const h=document.createElement("h2");h.textContent="Hi, I'm Jarvis.";
+  const h=document.createElement("h2");h.textContent="Hi, I'm "+aiName()+".";
   d.append(h,mode==="site"?"Describe a website and I'll build it.":"Ask me a question.");
   const ex=document.createElement("div");ex.className="ex";
   MODES[mode].ex.forEach(t=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>{q.value=t;f.requestSubmit()};ex.append(b)});
@@ -251,22 +310,22 @@ function pickVoice(text){
 }
 function speakText(text,btn){
   if(!("speechSynthesis" in window))return;
-  if(speechSynthesis.speaking){speechSynthesis.cancel();btn.textContent="Listen";return}
+  if(speechSynthesis.speaking){speechSynthesis.cancel();btn.textContent="Listen";voiceUI(false);return}
   const clean=text.replace(/```[\s\S]*?```/g," ").replace(/\[([^\]]+)\]\([^)]*\)/g,"$1").replace(/https?:\/\/\S+/g,"link").replace(/[*_#`>]/g,"").trim();
   if(!clean)return;
   const u=new SpeechSynthesisUtterance(clean),v=pickVoice(clean);
   if(v){u.voice=v;u.lang=v.lang}else u.lang=/[\u0900-\u097F]/.test(clean)?"hi-IN":"en-IN";
-  u.onend=u.onerror=()=>{btn.textContent="Listen"};
-  btn.textContent="Stop";speechSynthesis.speak(u);
+  u.onend=u.onerror=()=>{btn.textContent="Listen";voiceUI(false)};
+  btn.textContent="Stop";voiceUI(true);speechSynthesis.speak(u);
 }
-function actions(el,text){
+function actions(el,text,ts){
   const a=document.createElement("div");a.className="acts";
   const mk=(t,fn)=>{const b=document.createElement("button");b.type="button";b.textContent=t;b.onclick=()=>fn(b);a.append(b);return b};
   mk("Copy",b=>copy(text,b));
   if("speechSynthesis" in window)mk("Listen",b=>speakText(text,b));
   document.querySelectorAll(".regen").forEach(x=>x.remove());
   mk("Regenerate",()=>regen()).classList.add("regen");
-  el.append(a);
+  if(ts){const t=document.createElement("time");t.className="ts";t.textContent=fmt(ts);a.append(t)}el.append(a);
 }
 function regen(){
   if(busy)return;
@@ -278,15 +337,16 @@ function regen(){
   if(nodes.length>=2){nodes[nodes.length-1].remove();nodes[nodes.length-2].remove()}
   q.value=u.content.replace(/ \[image attached\]$/,"");f.requestSubmit();
 }
-function add(cls,text,isSite){
+function fmt(ts){return ts?new Date(ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):""}
+function add(cls,text,isSite,ts){
   if(log.querySelector(".empty"))log.innerHTML="";
   const d=document.createElement("div");d.className="msg "+cls;
-  if(cls==="ai")render(d,text,isSite,true);else d.textContent=text;
+  if(cls==="ai")render(d,text,isSite,true);else{d.textContent=text;if(ts){const t=document.createElement("time");t.className="ts";t.textContent=fmt(ts);d.append(t)}}
   log.append(d);log.scrollTop=log.scrollHeight;return d;
 }
 function loadChat(c){
   chat=c;mode=c.mode||"chat";buildModes();log.innerHTML="";
-  c.msgs.forEach(m=>{const d=add(m.role==="user"?"user":"ai",m.content,mode==="site");if(m.role!=="user")actions(d,m.content)});
+  c.msgs.forEach(m=>{const d=add(m.role==="user"?"user":"ai",m.content,mode==="site",m.ts);if(m.role!=="user")actions(d,m.content,m.ts)});
   if(!c.msgs.length)showEmpty();
 }
 function openHistory(){
@@ -309,7 +369,8 @@ $("new").onclick=()=>{if(ctrl)ctrl.abort();busy=false;send.disabled=!sample;chat
 
 async function init(){
   sample=async(msgs,o)=>{
-    if(!window.puter || !puter.ai || typeof puter.ai.chat !== "function"){
+    if(!navigator.onLine)throw new Error("You are offline. Connect to the internet and try again.");
+if(!window.puter || !puter.ai || typeof puter.ai.chat !== "function"){
       throw new Error("Puter AI could not load. Check your internet connection and reload the page.");
     }
     if(o.signal && o.signal.aborted) throw new DOMException("Request aborted", "AbortError");
@@ -319,7 +380,15 @@ async function init(){
       ? { model: "openai/gpt-5.6-luna", tools: [{ type: "web_search" }], normalize: true }
       : { model: "anthropic/claude-sonnet-5-5" };
 
-    const response = await puter.ai.chat(msgs, options);
+    let response;
+    if(o.images && o.images.length){
+      // Photo question: send the image together with the question and the style instructions.
+      const head=((msgs[0]&&msgs[0].content)||"").split("\n\nThe conversation")[0];
+      const ask=(msgs[msgs.length-1].content||"").replace(/ \[image attached\]$/,"");
+      response = await puter.ai.chat(head+"\n\n"+ask, o.images[0], {model:"anthropic/claude-sonnet-5-5"});
+    }else{
+      response = await puter.ai.chat(msgs, options);
+    }
     if(o.signal && o.signal.aborted) throw new DOMException("Request aborted", "AbortError");
     const content = response && response.message ? response.message.content : "";
     const answer = typeof content === "string"
@@ -342,16 +411,16 @@ f.addEventListener("submit",async e=>{
   // Automatically use web search for questions that likely need current/live information.
   const webSearch = mode==="chat" && !img && /\b(search|internet|latest|today|current|news|weather|price|recent|2026|who is|what happened|online|look up|web)\b|aaj|abhi|taaza|khabar|mausam|daam|internet par|search karo|latest bata/i.test(text);
   const cur=chat;chat.mode=mode;if(!chat.title)chat.title=text.slice(0,60);
-  add("user",img?text+"\n[image attached]":text);
-  chat.msgs.push({role:"user",content:img?text+" [image attached]":text});
-  const out=add("ai","Thinking…",false);
+  add("user",img?text+"\n[image attached]":text,false,Date.now());
+  chat.msgs.push({role:"user",content:img?text+" [image attached]":text,ts:Date.now()});
+  const out=add("ai","Thinking…",false);out.classList.add("typing");
   ctrl=new AbortController();const mine=ctrl;
   try{
-    const r=await sample([{role:"user",content:MODES[mode].sys+"\n\nThe conversation follows. Reply to the last message."},{role:"assistant",content:"Understood."},...chat.msgs.map(m=>({role:m.role,content:m.content}))],{
+    const r=await sample([{role:"user",content:customPrompt()+MODES[mode].sys+"\n\nThe conversation follows. Reply to the last message."},{role:"assistant",content:"Understood."},...chat.msgs.map(m=>({role:m.role,content:m.content}))],{
       cache:false,webSearch,signal:mine.signal,modelTier:isSite?"complex":"default",...(img?{images:[img]}:{}),
       onText:({text})=>{partial=text;render(out,text,isSite,false);log.scrollTop=log.scrollHeight}});
-    render(out,r.text,isSite,true);actions(out,r.text);
-    chat.msgs.push({role:"assistant",content:r.text});save();
+    out.classList.remove("typing");render(out,r.text,isSite,true);actions(out,r.text,Date.now());if(ls.get("jarvis:autospeak",false))speakText(r.text,{});
+    chat.msgs.push({role:"assistant",content:r.text,ts:Date.now()});save();
   }catch(err){
     if(mine.signal.aborted&&partial&&chat===cur){render(out,partial,isSite,true);chat.msgs.push({role:"assistant",content:partial});save();return}
     if(chat===cur)chat.msgs.pop();out.remove();
@@ -392,13 +461,85 @@ if(SR){
     if(on&&rec){rec.stop();return}
     rec=new SR();rec.interimResults=false;rec.lang=navigator.language||"en-US";
     rec.onresult=ev=>{q.value=(q.value+" "+ev.results[0][0].transcript).trim();q.dispatchEvent(new Event("input"))};
-    rec.onerror=()=>{mic.textContent="Mic blocked";setTimeout(()=>mic.textContent="Mic",2000)};
-    rec.onend=()=>{on=false;if(mic.textContent==="Listening…")mic.textContent="Mic"};
-    try{rec.start();on=true;mic.textContent="Listening…"}catch(e){}
+    rec.onerror=ev=>{const m=ev&&ev.error==="not-allowed"?"Mic blocked":ev&&ev.error==="no-speech"?"No speech":"Mic error";mic.textContent=m;document.body.classList.remove("listening");setTimeout(()=>mic.textContent="Mic",2200)};
+    rec.onend=()=>{on=false;document.body.classList.remove("listening");if(mic.textContent==="Listening…")mic.textContent="Mic"};
+    try{rec.start();on=true;document.body.classList.add("listening");mic.textContent="Listening…"}catch(e){}
   };
 }
 if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
-buildModes();showEmpty();init();
+/* custom instructions */
+function custom(){try{return JSON.parse(localStorage.getItem("jarvis:custom")||"{}")}catch(e){return{}}}
+function aiName(){return (custom().name||"").trim()||"Jarvis"}
+function customPrompt(){
+  const c=custom();let t="Your name is "+aiName()+". ";
+  if(c.ins&&c.ins.trim())t+="The user's custom instructions (follow them unless they conflict with safety or the output format required below): "+c.ins.trim()+"\n\n";
+  return t;
+}
+function applyName(){
+  const n=aiName();
+  const br=document.querySelector(".brand");if(br&&br.lastChild)br.lastChild.textContent=n;
+  document.title=n;
+  const h=document.querySelector(".empty h2");if(h)h.textContent="Hi, I'm "+n+".";
+}
+$("set").onclick=()=>{const c=custom();$("cname").value=c.name||"";$("cins").value=c.ins||"";$("sp").classList.add("open")};
+$("sclose").onclick=()=>$("sp").classList.remove("open");
+$("ssave").onclick=()=>{try{localStorage.setItem("jarvis:custom",JSON.stringify({name:$("cname").value.trim().slice(0,24),ins:$("cins").value.trim().slice(0,1000)}))}catch(e){}applyName();$("sp").classList.remove("open")};
+$("sreset").onclick=()=>{try{localStorage.removeItem("jarvis:custom")}catch(e){}$("cname").value="";$("cins").value="";applyName()};
+$("attach").hidden=false;
+/* sidebar, notes, tasks, voice, privacy */
+const DR=$("dr"),BD=$("bd");
+const openDr=o=>{DR.classList.toggle("open",o);BD.classList.toggle("open",o)};
+$("tools").onclick=()=>openDr(true);$("dclose").onclick=()=>openDr(false);BD.onclick=()=>openDr(false);
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const notes=$("notes");notes.value=ls.get("jarvis:notes","");notes.oninput=()=>ls.set("jarvis:notes",notes.value);
+function askNotes(pre){
+  if(!notes.value.trim()){notes.focus();return}
+  if(busy)return;
+  mode="study";chat=newChat();chat.mode=mode;buildModes();showEmpty();
+  q.value=pre+"\n\n"+notes.value.trim().slice(0,3500);openDr(false);f.requestSubmit();
+}
+$("nsum").onclick=()=>askNotes("Summarize these notes into short revision points:");
+$("nquiz").onclick=()=>askNotes("Quiz me with 5 questions on these notes, one at a time:");
+let tasks=ls.get("jarvis:tasks",[]);
+function drawTasks(){
+  const l=$("tl");l.innerHTML="";
+  tasks.forEach((t,i)=>{
+    const r=document.createElement("div");r.className="task"+(t.d?" done":"");
+    const c=document.createElement("input");c.type="checkbox";c.checked=!!t.d;c.setAttribute("aria-label","Mark done");
+    c.onchange=()=>{t.d=c.checked;ls.set("jarvis:tasks",tasks);drawTasks()};
+    const sp=document.createElement("span");sp.textContent=t.t;
+    const x=document.createElement("button");x.type="button";x.className="ghost";x.textContent="\u2715";x.setAttribute("aria-label","Delete task");
+    x.onclick=()=>{tasks.splice(i,1);ls.set("jarvis:tasks",tasks);drawTasks()};
+    r.append(c,sp,x);l.append(r);
+  });
+}
+function addTask(){const v=$("tin").value.trim().slice(0,120);if(!v)return;tasks.unshift({t:v,d:false});tasks=tasks.slice(0,100);ls.set("jarvis:tasks",tasks);$("tin").value="";drawTasks()}
+$("tadd").onclick=addTask;$("tin").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addTask()}};drawTasks();
+function voiceUI(on){document.body.classList.toggle("speaking",on);$("stopv").hidden=!on}
+$("stopv").onclick=()=>{if("speechSynthesis" in window)speechSynthesis.cancel();voiceUI(false)};
+$("aspeak").checked=!!ls.get("jarvis:autospeak",false);
+$("aspeak").onchange=e=>ls.set("jarvis:autospeak",e.target.checked);
+if(!("speechSynthesis" in window))$("aspeak").parentElement.hidden=true;
+$("clr").onclick=()=>{
+  if(!confirm("Clear this chat? This cannot be undone."))return;
+  if(ctrl)ctrl.abort();busy=false;
+  const id=chat.id;try{localStorage.setItem("jarvis:chats",JSON.stringify(store().filter(c=>c.id!==id)))}catch(e){}
+  chat=newChat();chat.mode=mode;showEmpty();openDr(false);
+};
+$("delh").onclick=()=>{
+  if(!confirm("Delete ALL saved chats on this device?"))return;
+  try{localStorage.removeItem("jarvis:chats")}catch(e){}
+  chat=newChat();chat.mode=mode;showEmpty();openDr(false);
+};
+$("dela").onclick=()=>{
+  if(!confirm("Delete chats, notes, tasks and settings from this device?"))return;
+  try{["jarvis:chats","jarvis:notes","jarvis:tasks","jarvis:custom","jarvis:theme","jarvis:autospeak"].forEach(k=>localStorage.removeItem(k))}catch(e){}
+  location.reload();
+};
+const netUI=()=>{$("net").style.display=navigator.onLine?"none":"block"};
+addEventListener("online",netUI);addEventListener("offline",netUI);netUI();
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){openDr(false);$("sp").classList.remove("open");$("hp").classList.remove("open")}});
+buildModes();showEmpty();applyName();init();
 </script>
 </body>
 </html>

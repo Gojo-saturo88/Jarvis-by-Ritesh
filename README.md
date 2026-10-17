@@ -1,18 +1,32 @@
-# Jarvis web app
+# JARVIS AI by Ritesh
 
-No server and no API key needed. The AI runs through Puter.js, where each person who uses the app signs in with their own free Puter account and covers their own AI usage.
+A futuristic, mobile-friendly AI assistant in a single `index.html`. The AI runs through Puter.js: no server and no API key. Each user signs in with their own Puter account.
 
-Files: index.html (the app), manifest.webmanifest + sw.js + icons (make it installable).
+## Features
+- Holographic HUD look: spinning reactor core, scan lines, cyan glow. Animations stop when the phone asks for reduced motion.
+- Modes: General, Maths, Code, Writing, Study, Translate, Creative, Website builder.
+- Chat: typing indicator, timestamps, Copy / Listen / Regenerate on every answer, Stop button, saved history (last 20 chats), photo questions, live web search for current-events questions, custom name and instructions (gear button).
+- Voice: microphone input (where the browser supports it), spoken replies, auto-speak option, Stop voice button, clear mic-permission messages.
+- Student tools (Tools sidebar): notes with Summarize and Quiz me, task list.
+- Privacy: Delete chat history, Clear this chat, Delete all my data (each asks for confirmation).
+- Offline banner and clear error messages. Failed requests never show as successful answers.
 
-## Put it online (free, any one of these)
-- Netlify Drop: go to app.netlify.com/drop and drag this folder onto the page.
-- GitHub Pages: upload the files to a GitHub repo and turn on Pages.
-- Vercel: run `npx vercel` in this folder.
+## Files
+index.html (the whole app), sw.js, manifest.webmanifest, icon-192.png, icon-512.png, icon.svg.
+The old `api/` folder and `vercel.json` are not used any more and can be deleted.
 
-Then open your link and Add to Home Screen (Share menu on iPhone, the ⋮ menu on Android in Chrome).
+## Run / deploy
+Serve the folder over https (Vercel, Netlify or GitHub Pages) and open it. For a quick local test: `python3 -m http.server` in this folder, then open http://localhost:8000.
+Add to Home Screen to install it like an app.
 
-## Notes
-- The first time someone sends a message, a Puter sign-in window opens. Allow pop-ups.
-- Usage limits depend on each person's Puter account. See puter.com for current terms.
-- Chat history is saved in each person's browser only.
-- It must be served over https (all three options above do this); opening the file directly will not install as an app.
+## Data and privacy
+- Saved only in your browser (localStorage): chats, notes, tasks, theme, custom instructions, voice setting.
+- Messages go to Puter and the AI provider to get an answer. Web-search questions use a search tool. Photos you attach are sent the same way.
+- Voice input uses the browser's speech service, which may process audio online.
+- No passwords, tokens or API keys are stored in the app.
+
+## Known limitations
+- Needs internet and a free Puter account for AI replies. Usage limits depend on the Puter account.
+- Voice input and spoken replies depend on the browser and the voices installed on the phone.
+- Attached photos are not kept in saved history.
+- Chat history is per browser and per device.
