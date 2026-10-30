@@ -1,1 +1,18 @@
-
+export default async function handler(req,res){
+res.setHeader("Cache-Control","no-store");
+if(req.method!=="POST"){res.setHeader("Allow","POST");return res.status(405).json({error:"Method not allowed. Use POST."})}
+const {messages,search,fast,tier}=req.body||{};
+if(!Array.isArray(messages)||!messages.length)return res.status(400).json({error:"Please send a message."});
+const clean=messages.filter(m=>m&&["user","assistant"].includes(m.role)&&typeof m.content==="string").slice(-24).map(m=>({role:m.role,content:m.content.slice(0,10000)}));
+if(!clean.length)return res.status(400).json({error:"No valid messages found."});
+const system="You are JARVIS, a helpful personal AI assistant built for Ritesh. Reply clearly in the user's language, including Hindi, Hinglish, and English. Use readable Markdown. Be honest about your capabilities. Never claim to have performed actions that you did not perform. If current web information is unavailable, say so instead of inventing facts.";
+const groq=process.env.GROQ_API_KEY,gemini=process.env.GEMINI_API_KEY;
+const model=fast?(process.env.GROQ_CHAT_MODEL||"openai/gpt-oss-20b"):tier==="complex"?(process.env.GROQ_COMPLEX_MODEL||"openai/gpt-oss-120b"):(process.env.GROQ_CHAT_MODEL||"openai/gpt-oss-20b");
+let lastError="No AI provider configured.";
+// Search requests go to Gemini first so Google Search grounding can be used.
+if(groq&&!search){try{const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+groq,"Content-Type":"application/json"},body:JSON.stringify({model,messages:[{role:"system",content:system},...clean],temperature:.7,max_tokens:2048}),signal:AbortSignal.timeout(45000)});const d=await r.json().catch(()=>({}));const text=d.choices?.[0]?.message?.content;if(r.ok&&text?.trim())return res.status(200).json({text,provider:"groq",searched:false});lastError=d.error?.message||"Groq status "+r.status}catch(e){lastError=e.message}}
+if(gemini){try{const gm=process.env.GEMINI_MODEL||"gemini-2.5-flash";const body={systemInstruction:{parts:[{text:system}]},contents:clean.map(m=>({role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]})),generationConfig:{temperature:.7,maxOutputTokens:2048}};if(search)body.tools=[{google_search:{}}];const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(gm)+":generateContent?key="+encodeURIComponent(gemini),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)});const d=await r.json().catch(()=>({}));const c=d.candidates?.[0],text=c?.content?.parts?.map(p=>p.text||"").join("").trim();if(r.ok&&text)return res.status(200).json({text,provider:"gemini",searched:!!search,groundingMetadata:c.groundingMetadata||null});lastError=d.error?.message||"Gemini status "+r.status}catch(e){lastError=e.message}}
+if(search&&groq){try{const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+groq,"Content-Type":"application/json"},body:JSON.stringify({model,messages:[{role:"system",content:system+" Live web search is unavailable for this answer; be transparent about current facts."},...clean],temperature:.7,max_tokens:2048}),signal:AbortSignal.timeout(45000)});const d=await r.json().catch(()=>({}));const text=d.choices?.[0]?.message?.content;if(r.ok&&text?.trim())return res.status(200).json({text,provider:"groq",searched:false});lastError=d.error?.message||"Groq status "+r.status}catch(e){lastError=e.message}}
+console.error("JARVIS request failed:",lastError);
+return res.status(502).json({error:"JARVIS couldn't get a response. Check API keys, provider limits, and Vercel logs, then try again."});
+}
